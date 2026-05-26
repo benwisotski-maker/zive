@@ -77,8 +77,12 @@ function GeneralMetrics({ items }) {
   );
 }
 
-// Reusable empty state inside a card
-function EmptyTable({ msg = "No data available" }) {
+// Reusable empty state inside a card.
+// Renamed from EmptyTable to SubEmptyTable to avoid global-name collision with
+// pages.jsx:EmptyTable (which expects different props). Both files declare
+// `function EmptyTable` at top level, so under babel-standalone the later-loaded
+// definition silently shadows the earlier one and the equity page crashes.
+function SubEmptyTable({ msg = "No data available" }) {
   return (
     <div style={{ padding: "60px 20px", textAlign: "center", fontSize: 12.5, color: "var(--muted-2)" }}>
       {msg}
@@ -697,7 +701,7 @@ function EquitySchedulePage() {
           <div style={{ textAlign: "right" }}>Remaining Shares</div>
           <div style={{ textAlign: "right" }}>Percentage Vested</div>
         </div>
-        <EmptyTable />
+        <SubEmptyTable />
         <div style={{
           padding: "10px 22px", borderTop: "1px solid var(--border)",
           display: "flex", alignItems: "center", justifyContent: "space-between",
