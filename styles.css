@@ -1,0 +1,309 @@
+/* Zive — Zinc neutral + Sky accent (matches component SVG kit) */
+:root {
+  /* ─── DARK (default) — zinc 950 base, sky accent ─── */
+  /* Base surfaces */
+  --bg: #09090B;           /* zinc-950 */
+  --bg-2: #0D0D0F;
+  --surface: #131316;      /* card */
+  --surface-2: #18181B;    /* zinc-900 */
+  --surface-3: #1F1F23;
+  --elevated: #1A1A1D;
+
+  /* Borders — translucent zinc */
+  --border: rgba(161, 161, 170, 0.10);
+  --border-strong: rgba(161, 161, 170, 0.16);
+  --border-bright: rgba(161, 161, 170, 0.24);
+
+  /* Text — zinc scale */
+  --fg: #FAFAFA;           /* zinc-50 */
+  --fg-2: #E4E4E7;         /* zinc-200 */
+  --muted: #A1A1AA;        /* zinc-400 */
+  --muted-2: #71717B;      /* zinc-500 */
+  --muted-3: #52525C;      /* zinc-600 */
+
+  /* Accent — sky (mapped from #0084D1 in light to a brighter sky for dark) */
+  --accent: #38BDF8;        /* sky-400 — pops on dark */
+  --accent-hover: #7DD3FC;  /* sky-300 */
+  --accent-tint: rgba(56, 189, 248, 0.14);
+  --accent-tint-2: rgba(56, 189, 248, 0.22);
+  --accent-glow: rgba(56, 189, 248, 0.35);
+  --on-accent: #08131C;     /* text/icon color when sitting on top of --accent fill */
+  /* Pre-computed accent rings/tints used in inline styles */
+  --accent-ring-06: rgba(56, 189, 248, 0.06);
+  --accent-ring-10: rgba(56, 189, 248, 0.10);
+  --accent-ring-12: rgba(56, 189, 248, 0.12);
+  --accent-ring-14: rgba(56, 189, 248, 0.14);
+  --accent-ring-18: rgba(56, 189, 248, 0.18);
+  --accent-ring-20: rgba(56, 189, 248, 0.20);
+  --accent-ring-25: rgba(56, 189, 248, 0.25);
+  --accent-ring-30: rgba(56, 189, 248, 0.30);
+  --accent-ring-35: rgba(56, 189, 248, 0.35);
+  --accent-ring-40: rgba(56, 189, 248, 0.40);
+  --accent-ring-45: rgba(56, 189, 248, 0.45);
+  --accent-text: #7DD3FC;   /* sky-300, used for chip/text where #C1B7FF was used */
+
+  /* Semantic */
+  --pos: #4ADE80;
+  --pos-dim: #22C55E;
+  --pos-tint: rgba(74, 222, 128, 0.12);
+  --neg: #F87171;
+  --neg-dim: #EF4444;
+  --neg-tint: rgba(248, 113, 113, 0.12);
+  --warn: #F59E0B;
+  --warn-tint: rgba(245, 158, 11, 0.14);
+
+  /* Chips — translucent zinc, mirrors SVG #71717B / 10% */
+  --chip: rgba(161, 161, 170, 0.08);
+  --chip-hover: rgba(161, 161, 170, 0.14);
+  --chip-strong: rgba(161, 161, 170, 0.18);
+
+  /* Radii */
+  --r-lg: 16px;
+  --r-md: 12px;
+  --r-sm: 8px;
+  --r-xs: 6px;
+
+  /* Hover / pressed surfaces — theme-aware */
+  --hover-bg: rgba(255, 255, 255, 0.05);
+  --hover-bg-strong: rgba(255, 255, 255, 0.08);
+  --hover-bg-soft: rgba(255, 255, 255, 0.03);
+  --active-bg: rgba(255, 255, 255, 0.06);
+  --pressed-bg: rgba(255, 255, 255, 0.10);
+
+  /* Shadows */
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 20px 40px -20px rgba(0, 0, 0, 0.5);
+  --shadow-pop: 0 16px 40px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-pop-soft: 0 8px 20px rgba(0, 0, 0, 0.45), 0 1px 4px rgba(0, 0, 0, 0.3);
+  --shadow-modal: 0 30px 80px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.04);
+
+  /* Modal header — dark navy in dark mode, soft surface in light */
+  --modal-header-bg: #0E1830;
+  --modal-header-fg: #FFFFFF;
+  --modal-header-border: rgba(255, 255, 255, 0.06);
+  --modal-header-btn-hover: rgba(255, 255, 255, 0.10);
+  --modal-overlay: rgba(0, 0, 0, 0.55);
+
+  /* Type */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-display: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0;
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv11", "ss01", "ss03";
+  letter-spacing: -0.01em;
+}
+
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+a { color: inherit; text-decoration: none; }
+input, textarea { font-family: inherit; color: inherit; }
+
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum", "cv11";
+  letter-spacing: -0.02em;
+}
+
+/* Display numeric — Mercury-style big number with superscript cents */
+.display-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  letter-spacing: -0.035em;
+  font-weight: 420;
+}
+.display-num .cents {
+  font-size: 0.5em;
+  vertical-align: baseline;
+  position: relative;
+  top: -0.9em;
+  font-weight: 420;
+  margin-left: 1px;
+  color: var(--muted);
+}
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+
+/* Scrollbars */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb {
+  background: rgba(161, 161, 170, 0.14);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: rgba(161, 161, 170, 0.26); background-clip: padding-box; border: 2px solid transparent; }
+
+/* Row hover */
+.row-hover { transition: background 100ms ease; }
+.row-hover:hover { background: rgba(161, 161, 170, 0.05); }
+
+/* Animated fade */
+/* NOTE: `to` state ends with `transform: none` (not `translateY(0)`) so the
+   element doesn't keep a transform after the animation completes. A non-none
+   transform creates a containing block for `position: fixed` descendants,
+   which would trap modals inside this wrapper instead of the viewport. */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.fade-up { animation: fadeUp 240ms ease both; }
+
+/* Subtle gradient orbs used on account icons — sky-tinted in dark */
+.orb {
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 25%, var(--orb-a, #7DD3FC) 0%, var(--orb-b, #075985) 55%, #0B0B10 100%);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+
+/* Top border gradient glow for hero cards */
+.hero-card {
+  position: relative;
+  overflow: hidden;
+}
+.hero-card::before {
+  content: "";
+  position: absolute; top: 0; left: 16px; right: 16px; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+}
+
+/* ─────────── Ask modal palette (theme-aware) ─────────── */
+:root {
+  --ask-window: #0E1419;
+  --ask-header: #131A20;
+  --ask-fg: #FFFFFF;
+  --ask-fg-muted: #94A3B8;
+  --ask-surface: #1A242E;
+  --ask-surface-hover: #243240;
+  --ask-surface-border: #2A3744;
+  --ask-surface-border-hover: #3A4A5A;
+  --ask-icon-muted: #B0BAC9;
+  --ask-accent: #38BDF8;
+  --ask-accent-icon: #7DD3FC;
+  --ask-send-disabled: #3A4A5A;
+  --ask-helper: #6E7B8E;
+  --ask-hdr-btn-hover: rgba(255,255,255,0.08);
+  --ask-hdr-btn-close: rgba(255,255,255,0.12);
+  --ask-overlay: rgba(0,0,0,0.45);
+}
+
+/* ─── LIGHT — pulled directly from your component SVGs ─── */
+:root[data-theme="light"] {
+  /* SVG card fill = #FAFAFA on white page */
+  --bg: #FFFFFF;
+  --bg-2: #FAFAFA;
+  --surface: #FAFAFA;
+  --surface-2: #F4F4F5;       /* zinc-100 */
+  --surface-3: #E4E4E7;       /* zinc-200 */
+  --elevated: #FFFFFF;
+
+  /* SVG borders use #71717B at 15% opacity */
+  --border: rgba(113, 113, 123, 0.12);
+  --border-strong: rgba(113, 113, 123, 0.18);
+  --border-bright: rgba(113, 113, 123, 0.32);
+
+  /* SVG text colors: heading #3F3F47, body #71717B, icon #9F9FA9 */
+  --fg: #18181B;             /* zinc-900, slightly stronger than svg text for body copy */
+  --fg-2: #3F3F47;           /* zinc-700 — primary heading per SVG */
+  --muted: #52525C;          /* zinc-600 */
+  --muted-2: #71717B;        /* zinc-500 — SVG body */
+  --muted-3: #9F9FA9;        /* zinc-400 — SVG icon muted */
+
+  /* Sky accent — info chip color #0084D1 at full strength, tint matches SVG bg */
+  --accent: #0084D1;          /* sky-600 */
+  --accent-hover: #0369A1;    /* sky-700 */
+  --accent-tint: rgba(0, 166, 244, 0.14);   /* sky-500 @ 14% — matches SVG */
+  --accent-tint-2: rgba(0, 166, 244, 0.22);
+  --accent-glow: rgba(0, 132, 209, 0.30);
+  --on-accent: #FFFFFF;
+  /* Pre-computed accent rings/tints used in inline styles */
+  --accent-ring-06: rgba(0, 132, 209, 0.06);
+  --accent-ring-10: rgba(0, 132, 209, 0.10);
+  --accent-ring-12: rgba(0, 132, 209, 0.12);
+  --accent-ring-14: rgba(0, 132, 209, 0.14);
+  --accent-ring-18: rgba(0, 132, 209, 0.18);
+  --accent-ring-20: rgba(0, 132, 209, 0.20);
+  --accent-ring-25: rgba(0, 132, 209, 0.25);
+  --accent-ring-30: rgba(0, 132, 209, 0.30);
+  --accent-ring-35: rgba(0, 132, 209, 0.35);
+  --accent-ring-40: rgba(0, 132, 209, 0.40);
+  --accent-ring-45: rgba(0, 132, 209, 0.45);
+  --accent-text: #0084D1;   /* same as accent on light */
+
+  /* Semantic — tuned for white bg */
+  --pos: #15803D;
+  --pos-dim: #14532D;
+  --pos-tint: rgba(21, 128, 61, 0.12);
+  --neg: #B91C1C;
+  --neg-dim: #991B1B;
+  --neg-tint: rgba(185, 28, 28, 0.12);
+  --warn: #B45309;
+  --warn-tint: rgba(180, 83, 9, 0.14);
+
+  /* Chips — SVG uses #71717B at 10% for chip bg */
+  --chip: rgba(113, 113, 123, 0.10);
+  --chip-hover: rgba(113, 113, 123, 0.16);
+  --chip-strong: rgba(113, 113, 123, 0.20);
+
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 1px 2px rgba(24, 24, 27, 0.04), 0 4px 12px -4px rgba(24, 24, 27, 0.06);
+  --shadow-pop: 0 1px 2px rgba(24, 24, 27, 0.04), 0 8px 20px -6px rgba(24, 24, 27, 0.10), 0 0 0 1px rgba(24, 24, 27, 0.04);
+  --shadow-pop-soft: 0 1px 2px rgba(24, 24, 27, 0.04), 0 4px 12px -4px rgba(24, 24, 27, 0.08);
+  --shadow-modal: 0 1px 2px rgba(24, 24, 27, 0.06), 0 16px 40px -12px rgba(24, 24, 27, 0.18), 0 0 0 1px rgba(24, 24, 27, 0.05);
+
+  /* Hover / pressed surfaces — visible on white */
+  --hover-bg: rgba(24, 24, 27, 0.05);
+  --hover-bg-strong: rgba(24, 24, 27, 0.08);
+  --hover-bg-soft: rgba(24, 24, 27, 0.03);
+  --active-bg: rgba(24, 24, 27, 0.06);
+  --pressed-bg: rgba(24, 24, 27, 0.10);
+
+  /* Modal header — soft surface on light */
+  --modal-header-bg: var(--bg-2);
+  --modal-header-fg: var(--fg);
+  --modal-header-border: var(--border);
+  --modal-header-btn-hover: var(--hover-bg);
+  --modal-overlay: rgba(24, 24, 27, 0.32);
+}
+
+:root[data-theme="light"] .display-num .cents { color: var(--muted); }
+:root[data-theme="light"] *::-webkit-scrollbar-thumb {
+  background: rgba(113, 113, 123, 0.22);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+:root[data-theme="light"] *::-webkit-scrollbar-thumb:hover {
+  background: rgba(113, 113, 123, 0.40);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+:root[data-theme="light"] .row-hover:hover { background: rgba(113, 113, 123, 0.06); }
+:root[data-theme="light"] .hero-card::before {
+  background: linear-gradient(90deg, transparent, rgba(113, 113, 123, 0.20), transparent);
+}
+:root[data-theme="light"] .orb {
+  box-shadow: inset 0 0 0 1px rgba(113, 113, 123, 0.16);
+  background: radial-gradient(circle at 30% 25%, var(--orb-a, #7DD3FC) 0%, var(--orb-b, #0369A1) 55%, #0C4A6E 100%);
+}
+
+/* Ask modal — light variant */
+:root[data-theme="light"] {
+  --ask-window: #FFFFFF;
+  --ask-header: #FAFAFA;
+  --ask-fg: #18181B;
+  --ask-fg-muted: #52525C;
+  --ask-surface: #F4F4F5;
+  --ask-surface-hover: #E4E4E7;
+  --ask-surface-border: rgba(113, 113, 123, 0.18);
+  --ask-surface-border-hover: rgba(113, 113, 123, 0.30);
+  --ask-icon-muted: #71717B;
+  --ask-accent: #0084D1;
+  --ask-accent-icon: #0084D1;
+  --ask-send-disabled: #D4D4D8;
+  --ask-helper: #9F9FA9;
+  --ask-hdr-btn-hover: rgba(113, 113, 123, 0.10);
+  --ask-hdr-btn-close: rgba(113, 113, 123, 0.16);
+  --ask-overlay: rgba(24, 24, 27, 0.32);
+}
