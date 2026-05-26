@@ -18,6 +18,31 @@
     openNewAgent: () => {}, openAsk: () => {}, close: () => {},
   };
 
+  // ─── Per-section error boundary. Reports the failure inline so one broken
+  //     page doesn't black-blank the entire 333-section tree. ───
+  class ZexpBoundary extends React.Component {
+    constructor(props) { super(props); this.state = { err: null }; }
+    static getDerivedStateFromError(err) { return { err }; }
+    componentDidCatch(err, info) {
+      // Surface to the global banner too via window.error
+      try { window.dispatchEvent(new ErrorEvent("error", { message: "[" + (this.props.label || "section") + "] " + (err && err.message || String(err)), error: err })); } catch (e) {}
+      try { console.error("ZexpBoundary caught in", this.props.label, err, info); } catch (e) {}
+    }
+    render() {
+      if (this.state.err) {
+        const e = this.state.err;
+        return (
+          <div style={{ padding: 24, background: "#1f1f23", color: "#fca5a5", fontFamily: "ui-monospace, Menlo, monospace", fontSize: 12, whiteSpace: "pre-wrap", lineHeight: 1.5, borderTop: "2px solid #b91c1c" }}>
+            <strong style={{ color: "#fff", fontSize: 13 }}>Render error in: {this.props.label || "(unknown)"}</strong>
+            {"\n\n"}{e && (e.message || String(e))}
+            {e && e.stack ? "\n\n" + e.stack : ""}
+          </div>
+        );
+      }
+      return this.props.children;
+    }
+  }
+
   // ─── Mini Sidebar (replicates app.jsx Sidebar visuals; static; no popovers) ───
   function MiniSidebar({ entity, page, sub, collapsed }) {
     const navConfig = entity === "admin" ? window.VCFO_NAV_CFG :
@@ -492,24 +517,23 @@
     return (
       <>
         {SECTIONS.map((d, i) => {
-          if (d.sidebarOnly) return <SidebarOnlySection key={i} d={d} />;
-          if (d.popup) {
-            return (
-              <Section key={i} label={d.label} theme={d.theme} popup>
-                <PageFrame entity={d.entity} page={d.page} sub={d.props?.initialSub} sidebarCollapsed={!!d.sidebarCollapsed}>
-                  {renderPageBody(d)}
-                  <div className="zexp-popup-inline">{renderPopup(d.popup)}</div>
-                </PageFrame>
-              </Section>
-            );
-          }
-          return (
-            <Section key={i} label={d.label} theme={d.theme}>
+          const inner = d.sidebarOnly ? (
+            <SidebarOnlySection d={d} />
+          ) : d.popup ? (
+            <Section label={d.label} theme={d.theme} popup>
+              <PageFrame entity={d.entity} page={d.page} sub={d.props?.initialSub} sidebarCollapsed={!!d.sidebarCollapsed}>
+                {renderPageBody(d)}
+                <div className="zexp-popup-inline">{renderPopup(d.popup)}</div>
+              </PageFrame>
+            </Section>
+          ) : (
+            <Section label={d.label} theme={d.theme}>
               <PageFrame entity={d.entity} page={d.page} sub={d.props?.initialSub} sidebarCollapsed={!!d.sidebarCollapsed}>
                 {renderPageBody(d)}
               </PageFrame>
             </Section>
           );
+          return <ZexpBoundary key={i} label={d.label}>{inner}</ZexpBoundary>;
         })}
       </>
     );
