@@ -20,8 +20,8 @@ const DOCUMENTS = [
   { name: "LP Agreement — Fully Executed", type: "Legal", date: "Nov 14, 2022", size: "2.1 MB" },
 ];
 
-function FundDetail({ fundId, onBack }) {
-  const [tab, setTab] = useState("overview");
+function FundDetail({ fundId, onBack, initialTab }) {
+  const [tab, setTab] = useState(initialTab || "overview");
   const f = FUNDS.find(x => x.id === fundId) || FUNDS[0];
   const [navW, navD] = fmtMoneyDec(f.nav);
   const pctCalled = f.called / f.commitment;

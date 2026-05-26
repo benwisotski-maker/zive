@@ -1,6 +1,46 @@
 // Zive — App shell & routing
 const { useState: useStateApp, useEffect: useEffectApp } = React;
 
+// Nav config per entity — same chrome, different content.
+// Moved to module scope so external tools (e.g. Zive-expanded.html) can read them.
+const VCFO_NAV_CFG = [
+  { items: [
+    { id: "home", label: "Home", icon: "home" },
+    { id: "vcfo-dashboards", label: "Dashboards", icon: "dashboard" },
+    { id: "vcfo-documents", label: "Documents", icon: "folder" },
+    { id: "vcfo-api", label: "API", icon: "anchor" },
+  ]},
+  { label: "Modules", items: [
+    { id: "vcfo-investments", label: "Investments", icon: "trendUp" },
+    { id: "vcfo-funds", label: "Funds", icon: "pie" },
+    { id: "vcfo-accounting", label: "Accounting", icon: "accounting" },
+    { id: "vcfo-reporting", label: "Reporting", icon: "report" },
+    { id: "vcfo-lp-portal", label: "LP Portal", icon: "investor" },
+    { id: "vcfo-uda", label: "Unstructured Data Analyzer", icon: "bookmark" },
+    { id: "vcfo-financing-docs", label: "Financing Documents", icon: "vault" },
+  ]},
+  { label: "AI", items: [
+    { id: "vcfo-agents", label: "Agents", icon: "settings" },
+    { id: "vcfo-doc-studio", label: "Document Studio", icon: "docStudio", hint: "BETA", hintTone: "beta" },
+    { id: "vcfo-mcp", label: "MCP", icon: "mcp" },
+  ]},
+  { label: "Administration", items: [
+    { id: "vcfo-users", label: "Users", icon: "users" },
+  ]},
+];
+
+const LP_NAV_CFG = [
+  { items: [
+    { id: "home", label: "Home", icon: "home" },
+  ]},
+  { label: "Fund", items: [
+    { id: "lp-overview", label: "Overview", icon: "dashboard" },
+  ]},
+  { label: "Accounting", items: [
+    { id: "lp-wire", label: "Wire Instructions", icon: "vault" },
+  ]},
+];
+
 function App() {
   const [route, setRoute] = useStateApp(() => {
     try { return JSON.parse(localStorage.getItem("zive.route")) || { page: "home" }; } catch { return { page: "home" }; }
@@ -48,45 +88,6 @@ function App() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-
-  // Nav config + body resolver per entity — same chrome, different content.
-  const VCFO_NAV_CFG = [
-    { items: [
-      { id: "home", label: "Home", icon: "home" },
-      { id: "vcfo-dashboards", label: "Dashboards", icon: "dashboard" },
-      { id: "vcfo-documents", label: "Documents", icon: "folder" },
-      { id: "vcfo-api", label: "API", icon: "anchor" },
-    ]},
-    { label: "Modules", items: [
-      { id: "vcfo-investments", label: "Investments", icon: "trendUp" },
-      { id: "vcfo-funds", label: "Funds", icon: "pie" },
-      { id: "vcfo-accounting", label: "Accounting", icon: "accounting" },
-      { id: "vcfo-reporting", label: "Reporting", icon: "report" },
-      { id: "vcfo-lp-portal", label: "LP Portal", icon: "investor" },
-      { id: "vcfo-uda", label: "Unstructured Data Analyzer", icon: "bookmark" },
-      { id: "vcfo-financing-docs", label: "Financing Documents", icon: "vault" },
-    ]},
-    { label: "AI", items: [
-      { id: "vcfo-agents", label: "Agents", icon: "settings" },
-      { id: "vcfo-doc-studio", label: "Document Studio", icon: "docStudio", hint: "BETA", hintTone: "beta" },
-      { id: "vcfo-mcp", label: "MCP", icon: "mcp" },
-    ]},
-    { label: "Administration", items: [
-      { id: "vcfo-users", label: "Users", icon: "users" },
-    ]},
-  ];
-
-  const LP_NAV_CFG = [
-    { items: [
-      { id: "home", label: "Home", icon: "home" },
-    ]},
-    { label: "Fund", items: [
-      { id: "lp-overview", label: "Overview", icon: "dashboard" },
-    ]},
-    { label: "Accounting", items: [
-      { id: "lp-wire", label: "Wire Instructions", icon: "vault" },
-    ]},
-  ];
 
   // Default landing page per entity
   React.useEffect(() => {
@@ -762,8 +763,8 @@ const GP_TASKS = [
   { desc: "Post Money Safe Missing\nFields: Valuation Cap, Discount Rate — Summit Ventures", assignee: "Zive", type: "Safe Missing Fields" },
 ];
 
-function TasksPage({ onOpenFund }) {
-  const [tab, setTab] = useState("gp");
+function TasksPage({ onOpenFund, initialTab } = {}) {
+  const [tab, setTab] = useState(initialTab || "gp");
   const TASK_COLS = [
     { key: "description", label: "Description", w: "minmax(260px, 2fr)" },
     { key: "dueDate", label: "Due Date", w: "140px" },
@@ -1315,6 +1316,14 @@ const hdrBtn = {
   color: "#fff", fontFamily: "inherit",
 };
 
-Object.assign(window, { App });
+Object.assign(window, {
+  App, Sidebar, HomeProfileChip, ProfileMenu, AskModal,
+  TasksPage, ActivityPage, DocumentsPage, ComingSoon,
+  VCFO_NAV_CFG, LP_NAV_CFG,
+});
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+// Skip auto-bootstrap when an external entry (e.g. Zive-expanded.html) wants
+// to take over the root.
+if (!window.__ZEXP_SKIP_APP_BOOT) {
+  ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+}

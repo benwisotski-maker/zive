@@ -224,9 +224,9 @@ const SOI_GROUPS = [
     rounds: [{ name: "Series Seed", date: "04/11/2024", shares: 760000, cost: 2128159, value: 2128159, costPps: "$2.80", curPps: "$2.80" }] },
 ];
 
-function SchedulePage() {
-  const [view, setView] = useStateSP("grid");
-  const [scope, setScope] = useStateSP("direct");
+function SchedulePage({ initialView, initialScope } = {}) {
+  const [view, setView] = useStateSP(initialView || "grid");
+  const [scope, setScope] = useStateSP(initialScope || "direct");
   const [includeSafe, setIncludeSafe] = useStateSP(true);
 
   const total = { cost: SOI_GROUPS.reduce((s, x) => s + x.cost, 0), value: SOI_GROUPS.reduce((s, x) => s + x.value, 0) };
@@ -524,10 +524,10 @@ function CompanyOverviewPage() {
   );
 }
 
-function PortfolioMetricsPage() {
-  const [src, setSrc] = useStateSP("summary");
-  const [section, setSection] = useStateSP("burn");
-  const [period, setPeriod] = useStateSP("annual");
+function PortfolioMetricsPage({ initialSrc, initialSection, initialPeriod } = {}) {
+  const [src, setSrc] = useStateSP(initialSrc || "summary");
+  const [section, setSection] = useStateSP(initialSection || "burn");
+  const [period, setPeriod] = useStateSP(initialPeriod || "annual");
   const [company, setCompany] = useStateSP("CircuitWorks Inc.");
 
   const sources = [
@@ -1726,8 +1726,8 @@ const GL_ROWS = [
   { date: "Apr 02, 2025", entry: "JE-2025-0142", memo: "Bank fees — April",                      account: "Bank Fees Expense", debit: 142.50, credit: 0 },
 ];
 
-function GeneralLedgerPage() {
-  const [scope, setScope] = useStateSP("all");
+function GeneralLedgerPage({ initialScope } = {}) {
+  const [scope, setScope] = useStateSP(initialScope || "all");
   return (
     <>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
@@ -2036,8 +2036,8 @@ const JE_ROWS = [
   { id: "JE-2025-D001", date: "Apr 24, 2025", memo: "Adjust — accrued professional services",     amount: 8400,   status: "Review",   lines: 2, source: "Recurring" },
 ];
 
-function JournalEntriesPage() {
-  const [filter, setFilter] = useStateSP("all");
+function JournalEntriesPage({ initialFilter } = {}) {
+  const [filter, setFilter] = useStateSP(initialFilter || "all");
   const filtered = JE_ROWS.filter(r =>
     filter === "all" ? true :
     filter === "posted" ? r.status === "Posted" :

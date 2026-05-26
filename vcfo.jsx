@@ -1719,8 +1719,8 @@ const WarnTriangle = ({ size = 14, color = "currentColor" }) => (
 );
 
 // ────────────── 4. Investments page (Deal Tracker) ──────────────
-function VCFOInvestments() {
-  const [tab, setTab] = useStateV("deals");
+function VCFOInvestments({ initialTab } = {}) {
+  const [tab, setTab] = useStateV(initialTab || "deals");
   const tabs = [
     { id: "deals", label: "Deal Tracker" },
     { id: "portfolio-co", label: "Portfolio Companies" },
@@ -1858,8 +1858,8 @@ const statusPill = {
 };
 
 // ────────────── 5. Funds page ──────────────
-function VCFOFunds() {
-  const [tab, setTab] = useStateV("funds");
+function VCFOFunds({ initialTab, initialActiveTab, initialProvider } = {}) {
+  const [tab, setTab] = useStateV(initialTab || "funds");
   const tabs = [
     { id: "funds", label: "Funds" },
     { id: "ccm", label: "Fund Capital Call Management" },
@@ -1871,17 +1871,17 @@ function VCFOFunds() {
     <div className="fade-up">
       <PillTabs tabs={tabs} value={tab} onChange={setTab} />
       {tab === "funds" && <FTFundsList />}
-      {tab === "ccm" && <FTCapitalCall />}
+      {tab === "ccm" && <FTCapitalCall initialActiveTab={initialActiveTab} />}
       {tab === "pacing" && <FTFundPacing />}
       {tab === "recycling" && <FTFundRecycling />}
-      {tab === "banks" && <FTConnectedBanks />}
+      {tab === "banks" && <FTConnectedBanks initialProvider={initialProvider} />}
     </div>
   );
 }
 
 // ────────────── 6. Accounting ──────────────
-function VCFOAccounting() {
-  const [tab, setTab] = useStateV("ca");
+function VCFOAccounting({ initialTab } = {}) {
+  const [tab, setTab] = useStateV(initialTab || "ca");
   const tabs = [
     { id: "ca", label: "Capital Accounts" },
     { id: "cc", label: "Capital Calls" },
@@ -1926,8 +1926,8 @@ const SimpleCard = ({ label, sub, value }) => (
 );
 
 // ────────────── 7. Reporting ──────────────
-function VCFOReporting() {
-  const [tab, setTab] = useStateV("perf");
+function VCFOReporting({ initialTab } = {}) {
+  const [tab, setTab] = useStateV(initialTab || "perf");
   const tabs = [
     { id: "perf", label: "Fund Performance" },
     { id: "ilpa", label: "ILPA Reports" },
@@ -2001,8 +2001,8 @@ function VCFOReporting() {
 }
 
 // ────────────── 8. LP Portal ──────────────
-function VCFOLPPortal() {
-  const [tab, setTab] = useStateV("main");
+function VCFOLPPortal({ initialTab } = {}) {
+  const [tab, setTab] = useStateV(initialTab || "main");
   const tabs = [
     { id: "main", label: "Main Screen" },
     { id: "history", label: "Document History" },
@@ -2079,8 +2079,8 @@ function VCFOLPPortal() {
 }
 
 // ────────────── 9. Unstructured Data Analyzer ──────────────
-function VCFOUDA() {
-  const [tab, setTab] = useStateV("dash");
+function VCFOUDA({ initialTab } = {}) {
+  const [tab, setTab] = useStateV(initialTab || "dash");
   const tabs = [
     { id: "dash", label: "Dashboard" },
     { id: "chats", label: "Chats" },
@@ -2189,8 +2189,8 @@ const PieChartFake = () => (
 );
 
 // ────────────── 10. Financing Documents ──────────────
-function VCFOFinancingDocs() {
-  const [tab, setTab] = useStateV("crit");
+function VCFOFinancingDocs({ initialTab } = {}) {
+  const [tab, setTab] = useStateV(initialTab || "crit");
   const tabs = [
     { id: "up", label: "Document Upload" },
     { id: "crit", label: "Critical Summary" },

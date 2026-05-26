@@ -85,7 +85,7 @@ const PORTFOLIO_PAGES = [
   { id: "equity",   label: "Equity Schedule" },
 ];
 
-function PortfolioPage({ initialSub } = {}) {
+function PortfolioPage({ initialSub, initialView, initialScope, initialSrc, initialSection, initialPeriod } = {}) {
   const [page, setPage] = useState(initialSub || "overview");
   React.useEffect(() => { if (initialSub) setPage(initialSub); }, [initialSub]);
 
@@ -96,10 +96,10 @@ function PortfolioPage({ initialSub } = {}) {
           title={(PORTFOLIO_PAGES.find(p => p.id === page) || {}).label}
           subTabs={PORTFOLIO_PAGES} page={page} setPage={setPage}
         />
-        {page === "soi"     && <SchedulePage />}
+        {page === "soi"     && <SchedulePage initialView={initialView} initialScope={initialScope} />}
         {page === "irr"     && <DealIRRPage />}
         {page === "company" && <CompanyOverviewPage />}
-        {page === "metrics" && <PortfolioMetricsPage />}
+        {page === "metrics" && <PortfolioMetricsPage initialSrc={initialSrc} initialSection={initialSection} initialPeriod={initialPeriod} />}
         {page === "equity"  && <EquitySchedulePage />}
       </PageWrap>
     );
@@ -634,8 +634,8 @@ function StartupHeroInfo({ s }) {
   );
 }
 
-function StartupProfilePage({ id, onBack }) {
-  const [tab, setTab] = useStateP("basic");
+function StartupProfilePage({ id, onBack, initialTab } = {}) {
+  const [tab, setTab] = useStateP(initialTab || "basic");
   const s = STARTUPS.find(x => x.id === id) || STARTUPS[0];
 
   return (
@@ -1270,7 +1270,7 @@ const ACCOUNTING_PAGES = [
   { id: "journal",  label: "Journal Entries" },
 ];
 
-function AccountingPage({ initialSub } = {}) {
+function AccountingPage({ initialSub, initialScope, initialFilter } = {}) {
   const [page, setPage] = useStateP(initialSub || "overview");
   React.useEffect(() => { if (initialSub) setPage(initialSub); }, [initialSub]);
 
@@ -1283,11 +1283,11 @@ function AccountingPage({ initialSub } = {}) {
           subTabs={ACCOUNTING_PAGES} page={page} setPage={setPage}
           kind={page}
         />
-        {page === "ledger"  && <GeneralLedgerPage />}
+        {page === "ledger"  && <GeneralLedgerPage initialScope={initialScope} />}
         {page === "trial"   && <TrialBalancePage />}
         {page === "balance" && <BalanceSheetPage />}
         {page === "chart"   && <ChartOfAccountsPage />}
-        {page === "journal" && <JournalEntriesPage />}
+        {page === "journal" && <JournalEntriesPage initialFilter={initialFilter} />}
       </PageWrap>
     );
   }
@@ -1811,8 +1811,8 @@ function ReportsAuditTab() {
   );
 }
 
-function ReportsPage() {
-  const [tab, setTab] = useStateP("fund");
+function ReportsPage({ initialTab } = {}) {
+  const [tab, setTab] = useStateP(initialTab || "fund");
   return (
     <PageWrap>
       <ReportTabStrip value={tab} onChange={setTab} />
@@ -2865,9 +2865,9 @@ function OnboardLPsConfirm({ onClose, count, onConfirm }) {
 }
 
 // ────────────── LP Onboarding ──────────────
-function LPOnboardingPage() {
+function LPOnboardingPage({ initialTab, initialSettingsSub } = {}) {
   const [page, setPage] = useStateP("active");
-  const [tab, setTab] = useStateP("overview");
+  const [tab, setTab] = useStateP(initialTab || "overview");
   const [addOpen, setAddOpen] = useStateP(false);
   const [lps, setLps] = useStateP([
     {
@@ -2935,7 +2935,7 @@ function LPOnboardingPage() {
         </div>
       </div>
 
-      {tab === "settings" && <LPOnboardingSettings />}
+      {tab === "settings" && <LPOnboardingSettings initialSub={initialSettingsSub} />}
       {tab === "vicums" && <LPOnboardingVicums />}
       {tab === "demand" && <LPOnboardingDemandInfo />}
 
@@ -3074,8 +3074,8 @@ function LPOnboardingPage() {
 }
 
 // ───── LP Onboarding — Settings tab ─────
-function LPOnboardingSettings() {
-  const [sub, setSub] = useStateP("landing");
+function LPOnboardingSettings({ initialSub } = {}) {
+  const [sub, setSub] = useStateP(initialSub || "landing");
   const subs = [
     { id: "landing", label: "Landing Card" },
     { id: "dashboard", label: "Dashboard" },

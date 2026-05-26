@@ -40,8 +40,8 @@ const BC_DATA = {
   alerts: { count: 0 },
 };
 
-function BlueCheckPage() {
-  const [tab, setTab] = useStateBC("accounting");
+function BlueCheckPage({ initialTab } = {}) {
+  const [tab, setTab] = useStateBC(initialTab || "accounting");
   const [bannerOpen, setBannerOpen] = useStateBC(true);
   const [includeHistory, setIncludeHistory] = useStateBC(true);
   const [toDate, setToDate] = useStateBC("07/20/2025");

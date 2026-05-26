@@ -219,8 +219,8 @@ const ACTION_DEFAULTS = [
 ];
 
 // ────────────── Fund Capital Call Management (tab 2) ──────────────
-function FTCapitalCall() {
-  const [activeTab, setActiveTab] = useStateFT("active");
+function FTCapitalCall({ initialActiveTab } = {}) {
+  const [activeTab, setActiveTab] = useStateFT(initialActiveTab || "active");
   return (
     <div className="fade-up" style={{ padding: "26px 40px 48px", maxWidth: 1440, margin: "0 auto" }}>
       <div style={{ display: "flex", gap: 24, alignItems: "flex-end", marginBottom: 22, flexWrap: "wrap" }}>
@@ -624,8 +624,8 @@ function FTFundRecycling() {
 }
 
 // ────────────── Connected Banks (tab 5) ──────────────
-function FTConnectedBanks() {
-  const [provider, setProvider] = useStateFT("plaid");
+function FTConnectedBanks({ initialProvider } = {}) {
+  const [provider, setProvider] = useStateFT(initialProvider || "plaid");
   return (
     <div className="fade-up" style={{ padding: "26px 40px 48px", maxWidth: 1440, margin: "0 auto" }}>
       <div style={{ marginBottom: 22 }}>

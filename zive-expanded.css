@@ -1,0 +1,281 @@
+/* Zive expanded — theme shim so [data-theme] applies on any element (not just :root) */
+
+/* ───────────────── DARK (default theme variables, scoped to [data-theme="dark"]) ───────────────── */
+[data-theme="dark"] {
+  --bg: #09090B;
+  --bg-2: #0D0D0F;
+  --surface: #131316;
+  --surface-2: #18181B;
+  --surface-3: #1F1F23;
+  --elevated: #1A1A1D;
+
+  --border: rgba(161, 161, 170, 0.10);
+  --border-strong: rgba(161, 161, 170, 0.16);
+  --border-bright: rgba(161, 161, 170, 0.24);
+
+  --fg: #FAFAFA;
+  --fg-2: #E4E4E7;
+  --muted: #A1A1AA;
+  --muted-2: #71717B;
+  --muted-3: #52525C;
+
+  --accent: #38BDF8;
+  --accent-hover: #7DD3FC;
+  --accent-tint: rgba(56, 189, 248, 0.14);
+  --accent-tint-2: rgba(56, 189, 248, 0.22);
+  --accent-glow: rgba(56, 189, 248, 0.35);
+  --on-accent: #08131C;
+  --accent-ring-06: rgba(56, 189, 248, 0.06);
+  --accent-ring-10: rgba(56, 189, 248, 0.10);
+  --accent-ring-12: rgba(56, 189, 248, 0.12);
+  --accent-ring-14: rgba(56, 189, 248, 0.14);
+  --accent-ring-18: rgba(56, 189, 248, 0.18);
+  --accent-ring-20: rgba(56, 189, 248, 0.20);
+  --accent-ring-25: rgba(56, 189, 248, 0.25);
+  --accent-ring-30: rgba(56, 189, 248, 0.30);
+  --accent-ring-35: rgba(56, 189, 248, 0.35);
+  --accent-ring-40: rgba(56, 189, 248, 0.40);
+  --accent-ring-45: rgba(56, 189, 248, 0.45);
+  --accent-text: #7DD3FC;
+
+  --pos: #4ADE80;
+  --pos-dim: #22C55E;
+  --pos-tint: rgba(74, 222, 128, 0.12);
+  --neg: #F87171;
+  --neg-dim: #EF4444;
+  --neg-tint: rgba(248, 113, 113, 0.12);
+  --warn: #F59E0B;
+  --warn-tint: rgba(245, 158, 11, 0.14);
+
+  --chip: rgba(161, 161, 170, 0.08);
+  --chip-hover: rgba(161, 161, 170, 0.14);
+  --chip-strong: rgba(161, 161, 170, 0.18);
+
+  --hover-bg: rgba(255, 255, 255, 0.05);
+  --hover-bg-strong: rgba(255, 255, 255, 0.08);
+  --hover-bg-soft: rgba(255, 255, 255, 0.03);
+  --active-bg: rgba(255, 255, 255, 0.06);
+  --pressed-bg: rgba(255, 255, 255, 0.10);
+
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 20px 40px -20px rgba(0, 0, 0, 0.5);
+  --shadow-pop: 0 16px 40px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-pop-soft: 0 8px 20px rgba(0, 0, 0, 0.45), 0 1px 4px rgba(0, 0, 0, 0.3);
+  --shadow-modal: 0 30px 80px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.04);
+
+  --modal-header-bg: #0E1830;
+  --modal-header-fg: #FFFFFF;
+  --modal-header-border: rgba(255, 255, 255, 0.06);
+  --modal-header-btn-hover: rgba(255, 255, 255, 0.10);
+  --modal-overlay: rgba(0, 0, 0, 0.55);
+
+  /* Ask modal — dark */
+  --ask-window: #0E1419;
+  --ask-header: #131A20;
+  --ask-fg: #FFFFFF;
+  --ask-fg-muted: #94A3B8;
+  --ask-surface: #1A242E;
+  --ask-surface-hover: #243240;
+  --ask-surface-border: #2A3744;
+  --ask-surface-border-hover: #3A4A5A;
+  --ask-icon-muted: #B0BAC9;
+  --ask-accent: #38BDF8;
+  --ask-accent-icon: #7DD3FC;
+  --ask-send-disabled: #3A4A5A;
+  --ask-helper: #6E7B8E;
+  --ask-hdr-btn-hover: rgba(255,255,255,0.08);
+  --ask-hdr-btn-close: rgba(255,255,255,0.12);
+  --ask-overlay: rgba(0,0,0,0.45);
+}
+
+[data-theme="dark"] .display-num .cents { color: var(--muted); }
+[data-theme="dark"] *::-webkit-scrollbar-thumb {
+  background: rgba(161, 161, 170, 0.14);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+[data-theme="dark"] *::-webkit-scrollbar-thumb:hover {
+  background: rgba(161, 161, 170, 0.26);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+[data-theme="dark"] .row-hover:hover { background: rgba(161, 161, 170, 0.05); }
+[data-theme="dark"] .hero-card::before {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+}
+[data-theme="dark"] .orb {
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 25%, var(--orb-a, #7DD3FC) 0%, var(--orb-b, #075985) 55%, #0B0B10 100%);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+
+/* ───────────────── LIGHT — scoped duplicates of :root[data-theme="light"] ───────────────── */
+[data-theme="light"] {
+  --bg: #FFFFFF;
+  --bg-2: #FAFAFA;
+  --surface: #FAFAFA;
+  --surface-2: #F4F4F5;
+  --surface-3: #E4E4E7;
+  --elevated: #FFFFFF;
+
+  --border: rgba(113, 113, 123, 0.12);
+  --border-strong: rgba(113, 113, 123, 0.18);
+  --border-bright: rgba(113, 113, 123, 0.32);
+
+  --fg: #18181B;
+  --fg-2: #3F3F47;
+  --muted: #52525C;
+  --muted-2: #71717B;
+  --muted-3: #9F9FA9;
+
+  --accent: #0084D1;
+  --accent-hover: #0369A1;
+  --accent-tint: rgba(0, 166, 244, 0.14);
+  --accent-tint-2: rgba(0, 166, 244, 0.22);
+  --accent-glow: rgba(0, 132, 209, 0.30);
+  --on-accent: #FFFFFF;
+  --accent-ring-06: rgba(0, 132, 209, 0.06);
+  --accent-ring-10: rgba(0, 132, 209, 0.10);
+  --accent-ring-12: rgba(0, 132, 209, 0.12);
+  --accent-ring-14: rgba(0, 132, 209, 0.14);
+  --accent-ring-18: rgba(0, 132, 209, 0.18);
+  --accent-ring-20: rgba(0, 132, 209, 0.20);
+  --accent-ring-25: rgba(0, 132, 209, 0.25);
+  --accent-ring-30: rgba(0, 132, 209, 0.30);
+  --accent-ring-35: rgba(0, 132, 209, 0.35);
+  --accent-ring-40: rgba(0, 132, 209, 0.40);
+  --accent-ring-45: rgba(0, 132, 209, 0.45);
+  --accent-text: #0084D1;
+
+  --pos: #15803D;
+  --pos-dim: #14532D;
+  --pos-tint: rgba(21, 128, 61, 0.12);
+  --neg: #B91C1C;
+  --neg-dim: #991B1B;
+  --neg-tint: rgba(185, 28, 28, 0.12);
+  --warn: #B45309;
+  --warn-tint: rgba(180, 83, 9, 0.14);
+
+  --chip: rgba(113, 113, 123, 0.10);
+  --chip-hover: rgba(113, 113, 123, 0.16);
+  --chip-strong: rgba(113, 113, 123, 0.20);
+
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 1px 2px rgba(24, 24, 27, 0.04), 0 4px 12px -4px rgba(24, 24, 27, 0.06);
+  --shadow-pop: 0 1px 2px rgba(24, 24, 27, 0.04), 0 8px 20px -6px rgba(24, 24, 27, 0.10), 0 0 0 1px rgba(24, 24, 27, 0.04);
+  --shadow-pop-soft: 0 1px 2px rgba(24, 24, 27, 0.04), 0 4px 12px -4px rgba(24, 24, 27, 0.08);
+  --shadow-modal: 0 1px 2px rgba(24, 24, 27, 0.06), 0 16px 40px -12px rgba(24, 24, 27, 0.18), 0 0 0 1px rgba(24, 24, 27, 0.05);
+
+  --hover-bg: rgba(24, 24, 27, 0.05);
+  --hover-bg-strong: rgba(24, 24, 27, 0.08);
+  --hover-bg-soft: rgba(24, 24, 27, 0.03);
+  --active-bg: rgba(24, 24, 27, 0.06);
+  --pressed-bg: rgba(24, 24, 27, 0.10);
+
+  --modal-header-bg: var(--bg-2);
+  --modal-header-fg: var(--fg);
+  --modal-header-border: var(--border);
+  --modal-header-btn-hover: var(--hover-bg);
+  --modal-overlay: rgba(24, 24, 27, 0.32);
+
+  /* Ask modal — light */
+  --ask-window: #FFFFFF;
+  --ask-header: #FAFAFA;
+  --ask-fg: #18181B;
+  --ask-fg-muted: #52525C;
+  --ask-surface: #F4F4F5;
+  --ask-surface-hover: #E4E4E7;
+  --ask-surface-border: rgba(113, 113, 123, 0.18);
+  --ask-surface-border-hover: rgba(113, 113, 123, 0.30);
+  --ask-icon-muted: #71717B;
+  --ask-accent: #0084D1;
+  --ask-accent-icon: #0084D1;
+  --ask-send-disabled: #D4D4D8;
+  --ask-helper: #9F9FA9;
+  --ask-hdr-btn-hover: rgba(113, 113, 123, 0.10);
+  --ask-hdr-btn-close: rgba(113, 113, 123, 0.16);
+  --ask-overlay: rgba(24, 24, 27, 0.32);
+}
+
+[data-theme="light"] .display-num .cents { color: var(--muted); }
+[data-theme="light"] *::-webkit-scrollbar-thumb {
+  background: rgba(113, 113, 123, 0.22);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+[data-theme="light"] *::-webkit-scrollbar-thumb:hover {
+  background: rgba(113, 113, 123, 0.40);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+[data-theme="light"] .row-hover:hover { background: rgba(113, 113, 123, 0.06); }
+[data-theme="light"] .hero-card::before {
+  background: linear-gradient(90deg, transparent, rgba(113, 113, 123, 0.20), transparent);
+}
+[data-theme="light"] .orb {
+  box-shadow: inset 0 0 0 1px rgba(113, 113, 123, 0.16);
+  background: radial-gradient(circle at 30% 25%, var(--orb-a, #7DD3FC) 0%, var(--orb-b, #0369A1) 55%, #0C4A6E 100%);
+}
+
+/* ───────────────── Section frame ───────────────── */
+body {
+  background: #2a2a2e;
+  padding: 32px 0;
+}
+.zexp-section {
+  width: 1920px;
+  margin: 0 auto 64px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  overflow: visible;
+}
+.zexp-section > h2.zexp-label {
+  font: 14px/1.4 'JetBrains Mono', monospace;
+  padding: 8px 14px;
+  background: #0b0b0c;
+  color: #cfff5a;
+  margin: 0;
+  border-bottom: 1px solid #1f1f22;
+}
+.zexp-section .zexp-frame {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg);
+}
+/* Sidebars inside expanded frames must NOT be sticky/100vh — let content drive height */
+.zexp-section .zexp-frame > aside {
+  position: static !important;
+  height: auto !important;
+  align-self: stretch;
+}
+/* Main content flex */
+.zexp-section .zexp-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+/* Prevent main from having its own scroll — let page grow */
+.zexp-section .zexp-main > main {
+  flex: 1;
+  overflow: visible !important;
+}
+/* TopBars inside expanded sections must NOT be sticky */
+.zexp-section .zexp-main > div[style*="position: sticky"],
+.zexp-section .zexp-main > div[style*="position:sticky"] {
+  position: static !important;
+}
+
+/* ───────────────── Inline-popup override ───────────────── */
+/* Popups portal to body normally; we shim createPortal to render inline.
+   The popup root divs use position:fixed/inset:0 — neutralize that inside popup hosts. */
+.zexp-popup-host .zexp-popup-inline > div[style*="position: fixed"],
+.zexp-popup-host .zexp-popup-inline > div[style*="position:fixed"] {
+  position: static !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  padding: 24px !important;
+  inset: auto !important;
+}
+.zexp-popup-host .zexp-popup-inline {
+  border-top: 1px dashed var(--border);
+}
