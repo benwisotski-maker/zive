@@ -1,0 +1,921 @@
+/* Zive Flow AI — AI-first fund admin surface */
+
+/* ─── Entity color identity ─── */
+[data-entity="vcfo"] {
+  --entity-accent: #38BDF8;
+  --entity-tint: rgba(56, 189, 248, 0.14);
+  --entity-glow: rgba(56, 189, 248, 0.35);
+}
+[data-entity="lp"] {
+  --entity-accent: #7C5CFF;
+  --entity-tint: rgba(124, 92, 255, 0.14);
+  --entity-glow: rgba(124, 92, 255, 0.35);
+}
+[data-entity="home"] {
+  --entity-accent: #84CC16;
+  --entity-tint: rgba(132, 204, 22, 0.14);
+  --entity-glow: rgba(132, 204, 22, 0.35);
+}
+[data-entity="all"] {
+  --entity-accent: #F59E0B;
+  --entity-tint: rgba(245, 158, 11, 0.14);
+  --entity-glow: rgba(245, 158, 11, 0.35);
+}
+
+/* In light theme, swap VCFO accent to the brand sky-600 */
+:root[data-theme="light"] [data-entity="vcfo"] {
+  --entity-accent: #0084D1;
+  --entity-tint: rgba(0, 132, 209, 0.12);
+  --entity-glow: rgba(0, 132, 209, 0.30);
+}
+
+/* ─── Shell ─── */
+.fa-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--fg);
+  transition: background 200ms ease, color 200ms ease;
+}
+
+/* ─── Top bar ─── */
+.fa-topbar {
+  display: flex;
+  align-items: center;
+  height: 56px;
+  padding: 0 20px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 50;
+  backdrop-filter: blur(10px);
+}
+.fa-topbar-left { display: flex; align-items: center; gap: 14px; flex: 0 0 auto; }
+.fa-topbar-center { flex: 1; display: flex; justify-content: center; gap: 6px; }
+.fa-topbar-right { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+
+.fa-entity-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: color 160ms ease, background 160ms ease, box-shadow 200ms ease, transform 160ms ease;
+}
+.fa-entity-tab:hover { color: var(--fg-2); background: var(--hover-bg-soft); }
+.fa-entity-tab .fa-tab-dot {
+  width: 7px; height: 7px; border-radius: 999px;
+  background: var(--entity-accent);
+  opacity: 0.55;
+  transition: opacity 160ms ease, box-shadow 200ms ease;
+}
+.fa-entity-tab.active {
+  color: var(--fg);
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: 0 6px 24px -4px var(--entity-glow);
+}
+.fa-entity-tab.active .fa-tab-dot {
+  opacity: 1;
+  box-shadow: 0 0 10px var(--entity-accent);
+}
+
+.fa-cmdk-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 10px 5px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.fa-cmdk-btn:hover { background: var(--surface-2); color: var(--fg-2); }
+.fa-cmdk-btn kbd {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  padding: 1px 5px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--muted);
+}
+
+.fa-profile-orb {
+  width: 30px; height: 30px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--entity-accent), color-mix(in oklab, var(--entity-accent) 50%, #000));
+  color: #fff;
+  font-size: 11px; font-weight: 600;
+  display: inline-flex; align-items: center; justify-content: center;
+  letter-spacing: 0.02em;
+}
+
+.fa-theme-btn {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--muted);
+}
+.fa-theme-btn:hover { background: var(--hover-bg); color: var(--fg-2); }
+
+/* ─── Canvas ─── */
+.fa-canvas {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+  width: 100%;
+}
+
+/* ─── Greeting ─── */
+.fa-greeting {
+  text-align: center;
+  margin-top: 12vh;
+  margin-bottom: 18px;
+}
+.fa-greeting h1 {
+  font-size: 30px;
+  font-weight: 450;
+  letter-spacing: -0.025em;
+  color: var(--fg);
+  margin: 0 0 8px;
+}
+.fa-greeting .fa-greeting-sub {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* ─── Composer ─── */
+.fa-composer {
+  width: 100%;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 200ms ease, border-color 200ms ease, transform 200ms ease;
+}
+.fa-composer:focus-within {
+  border-color: color-mix(in oklab, var(--entity-accent) 60%, var(--border-strong));
+  box-shadow: 0 0 0 4px var(--entity-tint), var(--shadow-card);
+}
+.fa-composer-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+}
+.fa-composer-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--fg);
+  padding: 6px 4px;
+}
+.fa-composer-input::placeholder { color: var(--muted-2); }
+.fa-composer-send {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: var(--entity-accent);
+  color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+.fa-composer-send:hover { transform: translateY(-1px); }
+.fa-composer-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.fa-composer-landing {
+  max-width: 720px;
+  margin: 0 auto 18px;
+  transform: scale(1.05);
+  transform-origin: top center;
+}
+
+.fa-composer-bar {
+  position: sticky;
+  top: 64px;
+  z-index: 20;
+  max-width: 920px;
+  margin: 0 auto 28px;
+  backdrop-filter: blur(8px);
+  background: color-mix(in oklab, var(--bg) 80%, transparent);
+}
+
+/* Entity chip inside composer */
+.fa-entity-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 8px;
+  background: var(--entity-tint);
+  color: var(--entity-accent);
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid color-mix(in oklab, var(--entity-accent) 30%, transparent);
+  transition: background 160ms ease;
+}
+.fa-entity-chip:hover { background: color-mix(in oklab, var(--entity-accent) 24%, transparent); }
+.fa-entity-chip .fa-entity-chip-dot {
+  width: 6px; height: 6px;
+  border-radius: 999px;
+  background: var(--entity-accent);
+  box-shadow: 0 0 6px var(--entity-accent);
+}
+.fa-entity-chip-pop {
+  position: absolute;
+  margin-top: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  box-shadow: var(--shadow-pop);
+  padding: 6px;
+  z-index: 60;
+  min-width: 200px;
+}
+.fa-entity-chip-pop button {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--fg-2);
+  text-align: left;
+}
+.fa-entity-chip-pop button:hover { background: var(--hover-bg); }
+.fa-entity-chip-pop button.active { background: var(--hover-bg-strong); color: var(--fg); }
+
+/* ─── Starter prompt chips ─── */
+.fa-prompt-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  max-width: 720px;
+  margin: 6px auto 0;
+}
+.fa-prompt-chip {
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+.fa-prompt-chip:hover {
+  color: var(--fg);
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+}
+
+/* ─── Section header (Pinned, etc.) ─── */
+.fa-section-h {
+  display: flex; align-items: center; gap: 12px;
+  margin: 36px 4px 14px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.fa-section-h::after {
+  content: ""; flex: 1; height: 1px;
+  background: var(--border);
+}
+
+/* ─── Room nav ─── */
+.fa-rooms {
+  display: flex;
+  gap: 6px;
+  margin: 6px auto 18px;
+  max-width: 920px;
+  padding: 0 4px;
+  overflow-x: auto;
+}
+.fa-room {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+.fa-room:hover { color: var(--fg-2); background: var(--hover-bg-soft); }
+.fa-room.active {
+  color: var(--entity-accent);
+  background: var(--entity-tint);
+  border-color: color-mix(in oklab, var(--entity-accent) 28%, transparent);
+}
+
+/* ─── Tool call chip strip ─── */
+.fa-toolcalls {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin: 6px 0 14px;
+  max-width: 920px;
+  margin-left: auto; margin-right: auto;
+  padding: 0 4px;
+}
+.fa-toolcall {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 10.5px;
+  padding: 3px 9px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+.fa-toolcall::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 999px;
+  background: var(--muted-3);
+  flex-shrink: 0;
+}
+.fa-toolcall.pending::before {
+  background: var(--entity-accent);
+  animation: faPulse 1.2s ease infinite;
+}
+.fa-toolcall.done::before {
+  background: var(--pos);
+  box-shadow: 0 0 6px var(--pos);
+}
+@keyframes faPulse {
+  0%, 100% { opacity: 0.45; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+/* ─── AI answer text ─── */
+.fa-answer {
+  max-width: 920px;
+  margin: 0 auto 14px;
+  padding: 0 4px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--fg-2);
+}
+
+/* ─── Provenance citation ─── */
+.fa-cite {
+  display: inline-block;
+  font-size: 9.5px;
+  padding: 1px 5px;
+  margin: 0 2px;
+  border-radius: 6px;
+  background: var(--entity-tint);
+  color: var(--entity-accent);
+  cursor: pointer;
+  vertical-align: super;
+  line-height: 1.2;
+  font-weight: 600;
+  border: 1px solid color-mix(in oklab, var(--entity-accent) 22%, transparent);
+}
+.fa-cite:hover { background: color-mix(in oklab, var(--entity-accent) 28%, transparent); }
+
+/* ─── Grid ─── */
+.fa-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 14px;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+.fa-card-sm { grid-column: span 3; }
+.fa-card-md { grid-column: span 4; }
+.fa-card-lg { grid-column: span 6; }
+.fa-card-xl { grid-column: span 12; }
+@media (max-width: 900px) {
+  .fa-card-sm, .fa-card-md, .fa-card-lg { grid-column: span 12; }
+}
+
+/* ─── Card base ─── */
+.fa-card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  transition: transform 200ms ease, opacity 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+  overflow: hidden;
+}
+.fa-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 8px 28px -16px rgba(0,0,0,0.5);
+}
+
+@keyframes faCardEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.fa-card-enter { animation: faCardEnter 360ms ease both; }
+
+.fa-card-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.fa-card-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  font-weight: 500;
+}
+.fa-card-actions { display: flex; align-items: center; gap: 6px; }
+.fa-card-pin {
+  width: 24px; height: 24px;
+  border-radius: 6px;
+  color: var(--muted-2);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.fa-card-pin:hover { background: var(--hover-bg); color: var(--fg-2); }
+.fa-card-pin.pinned { color: var(--entity-accent); background: var(--entity-tint); }
+
+.fa-suggested-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--entity-tint);
+  color: var(--entity-accent);
+  border: 1px solid color-mix(in oklab, var(--entity-accent) 24%, transparent);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* ─── KPI orb ─── */
+.fa-kpi-orb {
+  position: relative;
+  padding: 6px 0 4px;
+}
+.fa-kpi-orb::before {
+  content: "";
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 180px; height: 180px;
+  border-radius: 999px;
+  background: radial-gradient(circle, var(--entity-glow) 0%, transparent 65%);
+  pointer-events: none;
+  opacity: 0.7;
+  animation: faOrbPulse 4s ease-in-out infinite;
+}
+@keyframes faOrbPulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.06); }
+}
+.fa-kpi-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.fa-kpi-value {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--fg);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.fa-kpi-delta {
+  font-size: 12px;
+  color: var(--pos);
+  margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.fa-kpi-delta.neg { color: var(--neg); }
+.fa-kpi-delta.neutral { color: var(--muted); }
+
+/* ─── Sparkline tile ─── */
+.fa-spark-tile { padding: 4px 0; }
+.fa-spark-value {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--fg);
+  letter-spacing: -0.02em;
+  margin-top: 6px;
+}
+.fa-spark-svg { display: block; margin-top: 8px; width: 100%; height: 60px; }
+
+/* ─── Table card ─── */
+.fa-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.fa-table th {
+  text-align: left;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  font-weight: 500;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.fa-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-2);
+  font-variant-numeric: tabular-nums;
+}
+.fa-table tr:last-child td { border-bottom: none; }
+.fa-table tr:hover td { background: var(--hover-bg-soft); }
+.fa-table-summary {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--entity-tint);
+  border-left: 2px solid var(--entity-accent);
+}
+
+/* ─── Doc card ─── */
+.fa-doc {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.fa-doc-title { font-size: 14px; font-weight: 500; color: var(--fg); }
+.fa-doc-updated { font-size: 11px; color: var(--muted-2); font-variant-numeric: tabular-nums; }
+.fa-doc-snippet { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+
+/* ─── Task card ─── */
+.fa-task {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.fa-task:last-child { border-bottom: none; }
+.fa-task-check {
+  width: 16px; height: 16px;
+  border-radius: 5px;
+  border: 1.5px solid var(--muted-3);
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+.fa-task-text { flex: 1; color: var(--fg-2); }
+.fa-task-due { font-size: 11px; color: var(--muted-2); margin-top: 3px; }
+
+/* ─── Insight card ─── */
+.fa-insight-title {
+  font-size: 13px; font-weight: 500;
+  color: var(--fg);
+  margin-bottom: 6px;
+}
+.fa-insight-body {
+  font-size: 13px; line-height: 1.55;
+  color: var(--fg-2);
+}
+
+/* ─── Action card ─── */
+.fa-action {
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+}
+.fa-action-icon {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  background: var(--entity-tint);
+  color: var(--entity-accent);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.fa-action-label { font-size: 14px; font-weight: 500; color: var(--fg); }
+.fa-action-hint { font-size: 12px; color: var(--muted); }
+
+/* ─── Followup chips ─── */
+.fa-followup-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 920px;
+  margin: 22px auto 0;
+  padding: 0 4px;
+}
+.fa-followup-chip {
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  color: var(--fg-2);
+  font-size: 12.5px;
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.fa-followup-chip:hover {
+  border-color: color-mix(in oklab, var(--entity-accent) 50%, var(--border-strong));
+  background: var(--entity-tint);
+  color: var(--entity-accent);
+}
+.fa-followup-chip::before {
+  content: "→";
+  color: var(--muted-2);
+  font-size: 11px;
+}
+
+/* ─── Skeleton ─── */
+.fa-skeleton {
+  background: linear-gradient(90deg, var(--surface-2), var(--surface-3), var(--surface-2));
+  background-size: 200% 100%;
+  animation: faShimmer 1.4s linear infinite;
+  border-radius: 6px;
+}
+@keyframes faShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─── Cmd+K dialog ─── */
+.fa-cmdk-overlay {
+  position: fixed; inset: 0;
+  background: var(--modal-overlay);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding-top: 12vh;
+  z-index: 200;
+  backdrop-filter: blur(4px);
+  animation: faFadeIn 140ms ease;
+}
+@keyframes faFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.fa-cmdk {
+  width: 100%;
+  max-width: 560px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  box-shadow: var(--shadow-modal);
+  overflow: hidden;
+}
+.fa-cmdk-crumbs {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 10px 12px 4px;
+  min-height: 36px;
+}
+.fa-cmdk-crumb {
+  font-size: 11.5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--entity-tint);
+  color: var(--entity-accent);
+  border: 1px solid color-mix(in oklab, var(--entity-accent) 22%, transparent);
+  font-weight: 500;
+}
+.fa-cmdk-crumb-sep { font-size: 11px; color: var(--muted-2); }
+.fa-cmdk-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 12px 14px;
+  font-size: 15px;
+  color: var(--fg);
+  border-bottom: 1px solid var(--border);
+}
+.fa-cmdk-input::placeholder { color: var(--muted-2); }
+.fa-cmdk-list { max-height: 360px; overflow-y: auto; padding: 6px; }
+.fa-cmdk-empty { padding: 24px; text-align: center; font-size: 13px; color: var(--muted); }
+.fa-cmdk-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: var(--fg-2);
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+.fa-cmdk-item:hover, .fa-cmdk-item.active {
+  background: var(--hover-bg);
+  color: var(--fg);
+}
+.fa-cmdk-item.active { background: var(--entity-tint); color: var(--entity-accent); }
+.fa-cmdk-item-icon {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--muted);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.fa-cmdk-item-arrow { color: var(--muted-2); font-size: 12px; margin-left: auto; }
+.fa-cmdk-hint {
+  display: flex; gap: 12px; align-items: center;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--muted-2);
+  background: var(--bg-2);
+}
+.fa-cmdk-hint kbd {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+/* ─── Conversational report ─── */
+.fa-report-split {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 18px;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+@media (max-width: 1000px) {
+  .fa-report-split { grid-template-columns: 1fr; }
+}
+.fa-report-chat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 12px;
+  height: fit-content;
+  position: sticky;
+  top: 130px;
+}
+.fa-report-msg {
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.fa-report-msg.user {
+  background: var(--entity-tint);
+  color: var(--fg);
+  border: 1px solid color-mix(in oklab, var(--entity-accent) 20%, transparent);
+  align-self: flex-end;
+  max-width: 90%;
+}
+.fa-report-msg.ai {
+  background: var(--surface-2);
+  color: var(--fg-2);
+  border: 1px solid var(--border);
+}
+.fa-report-msg-meta { font-size: 10.5px; color: var(--muted-2); margin-top: 4px; }
+
+.fa-report-doc {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 32px 36px;
+  min-height: 600px;
+}
+.fa-report-header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 18px;
+  margin-bottom: 22px;
+}
+.fa-report-h1 {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+  margin: 0 0 6px;
+}
+.fa-report-h2 {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+
+.fa-report-block {
+  position: relative;
+  padding: 14px 16px;
+  border-radius: 10px;
+  margin-bottom: 4px;
+  transition: background 120ms ease;
+}
+.fa-report-block:hover {
+  background: var(--hover-bg-soft);
+}
+.fa-report-block:hover .fa-report-block-toolbar { opacity: 1; }
+.fa-report-block-toolbar {
+  position: absolute;
+  top: 8px; right: 8px;
+  display: flex; gap: 4px;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+.fa-report-block-toolbar button {
+  font-size: 10.5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  color: var(--muted);
+}
+.fa-report-block-toolbar button:hover { color: var(--fg); background: var(--surface-2); }
+
+.fa-report-block-body {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--fg-2);
+}
+.fa-report-block-body p { margin: 0 0 8px; }
+.fa-report-block-body p:last-child { margin-bottom: 0; }
+
+/* Cursor-style accept strip */
+.fa-accept-strip {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  margin: 0 auto 14px;
+  max-width: 1240px;
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--pos) 12%, var(--surface));
+  border: 1px solid color-mix(in oklab, var(--pos) 35%, var(--border));
+  font-size: 12.5px;
+  color: var(--fg-2);
+}
+.fa-accept-strip .fa-accept-dot {
+  width: 8px; height: 8px;
+  border-radius: 999px;
+  background: var(--pos);
+  box-shadow: 0 0 8px var(--pos);
+}
+.fa-accept-strip .fa-accept-btns { margin-left: auto; display: flex; gap: 6px; }
+.fa-accept-strip button {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--fg-2);
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.fa-accept-strip button.primary {
+  background: var(--pos);
+  color: #0a1a0e;
+  border-color: var(--pos);
+  font-weight: 500;
+}
+.fa-accept-strip button kbd {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  padding: 0 4px;
+  background: rgba(0,0,0,0.16);
+  border-radius: 3px;
+}
+
+/* ─── Room placeholder ─── */
+.fa-room-stub {
+  max-width: 720px;
+  margin: 80px auto;
+  padding: 60px 40px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+  text-align: center;
+}
+.fa-room-stub h2 { font-size: 18px; font-weight: 500; color: var(--fg); margin: 0 0 8px; }
+.fa-room-stub p { font-size: 13.5px; color: var(--muted); margin: 0; }
+.fa-room-stub .fa-room-stub-pulse {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 999px;
+  background: var(--entity-accent);
+  margin-right: 8px;
+  animation: faPulse 1.2s ease infinite;
+}
+
+/* ─── Stagger helper (set via inline style) ─── */
+.fa-stagger-1 { animation-delay: 0ms !important; }
+.fa-stagger-2 { animation-delay: 90ms !important; }
+.fa-stagger-3 { animation-delay: 180ms !important; }
+.fa-stagger-4 { animation-delay: 270ms !important; }
+.fa-stagger-5 { animation-delay: 360ms !important; }
+.fa-stagger-6 { animation-delay: 450ms !important; }
+
+/* ─── Misc utility ─── */
+.fa-flex { display: flex; }
+.fa-row { display: flex; align-items: center; }
+.fa-grow { flex: 1; }
+.fa-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.fa-muted { color: var(--muted); }
+.fa-pos { color: var(--pos); }
+.fa-neg { color: var(--neg); }

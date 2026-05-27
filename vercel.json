@@ -2,6 +2,8 @@
   "rewrites": [
     { "source": "/", "destination": "/Zive-expanded.html" },
     { "source": "/flow", "destination": "/Zive.html" },
-    { "source": "/flow/", "destination": "/Zive.html" }
+    { "source": "/flow/", "destination": "/Zive.html" },
+    { "source": "/flowai", "destination": "/flowai.html" },
+    { "source": "/flowai/", "destination": "/flowai.html" }
   ]
 }
