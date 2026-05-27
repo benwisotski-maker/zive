@@ -215,9 +215,9 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
   flex-direction: column;
   height: calc(100vh - 52px);
   min-height: 0;
-  max-width: 880px;
-  margin: 0 auto;
-  padding: 0 24px;
+  max-width: none;
+  margin: 0;
+  padding: 0 32px;
   width: 100%;
   position: relative;
   overflow: hidden;
@@ -226,20 +226,28 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 .fa-stage-landing { justify-content: center; padding-top: 0; }
 .fa-stage-thread { padding-top: 0; padding-bottom: 0; }
 
-/* AI mode: thread scrolls inside the stage; composer pinned at bottom. */
-.fa-stage[data-view-mode="ai"] { max-width: 880px; }
+/* AI mode: full available width. Thread scrolls inside the stage; composer
+   pinned at the bottom. The thread and composer have their own sensible
+   inner max-width so cards/inputs don't span hundreds of pixels wider than
+   the eye can scan. */
+.fa-stage[data-view-mode="ai"] { max-width: none; }
 .fa-stage[data-view-mode="ai"] .fa-thread {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
   padding-top: 40px;
   padding-bottom: 12px;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 .fa-stage[data-view-mode="ai"] .fa-composer-stick {
   position: static;
   bottom: auto;
-  margin: 0 0 24px;
+  margin: 0 auto 24px;
   flex-shrink: 0;
+  width: 100%;
+  max-width: 1100px;
 }
 .fa-stage[data-view-mode="ai"] .fa-landing {
   flex: 1;
@@ -247,6 +255,9 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
   overflow-y: auto;
   justify-content: center;
   padding: 6vh 0;
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
 }
 
 /* Split / full view modes — stage spans the full canvas */
