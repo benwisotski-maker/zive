@@ -578,7 +578,7 @@
   const ENTITY_DOT = { vcfo: "#38BDF8", lp: "#7C5CFF", home: "#84CC16" };
 
   // ──────────────────────────────────────────────────────────────
-  // 5c. Flow nav configs (for Browse drawer)
+  // 5c. Flow nav configs (for left icon rail)
   // ──────────────────────────────────────────────────────────────
   const HOME_NAV_CFG = [
     { items: [
@@ -699,7 +699,7 @@
   // ──────────────────────────────────────────────────────────────
   // 6. Slim TopBar
   // ──────────────────────────────────────────────────────────────
-  function TopBar({ entity, onEntity, onOpenCmdk, onToggleTheme, theme, onOpenBrowse }) {
+  function TopBar({ entity, onEntity, onOpenCmdk, onToggleTheme, theme }) {
     const ZW = window.ZiveWordmark;
     const STRIP = [
       { id: "vcfo", label: "VCFO" },
@@ -737,15 +737,6 @@
             ) : (
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
             )}
-          </button>
-          <button className="fa-browse-btn" onClick={onOpenBrowse} title="Browse">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="7" height="7" rx="1.5"/>
-              <rect x="14" y="3" width="7" height="7" rx="1.5"/>
-              <rect x="3" y="14" width="7" height="7" rx="1.5"/>
-              <rect x="14" y="14" width="7" height="7" rx="1.5"/>
-            </svg>
-            <span>Browse</span>
           </button>
         </div>
       </div>
@@ -986,52 +977,45 @@
   }
 
   // ──────────────────────────────────────────────────────────────
-  // 10. Browse drawer (right-side slide-in)
+  // 10. Left icon rail (persistent, hover-expand overlay)
   // ──────────────────────────────────────────────────────────────
-  function BrowseDrawer({ open, entity, onClose, onPickPage }) {
+  function LeftRail({ entity, pageId, onPickPage }) {
     const Icon = window.Icon;
     const sections = useMemo(() => navForEntity(entity), [entity]);
 
-    function renderSection(section, key) {
-      return (
-        <div className="fa-drawer-section" key={key}>
-          {section.label && (
-            <div className="fa-drawer-section-label">{section.label}</div>
-          )}
-          {section.items.map(it => (
-            <button
-              key={it.id}
-              className="fa-drawer-item"
-              onClick={() => onPickPage(it.id)}
-            >
-              <span className="fa-drawer-item-icon">
-                {Icon ? <Icon name={it.icon} size={15} /> : <span>•</span>}
-              </span>
-              <span className="fa-drawer-item-label">{it.label}</span>
-            </button>
+    return (
+      <nav className="fa-rail" data-entity={entity} aria-label="Sidebar navigation">
+        <div className="fa-rail-scroll">
+          {(sections || []).map((sec, si) => (
+            <React.Fragment key={si}>
+              {si > 0 && (
+                <>
+                  <div className="fa-rail-section-divider"></div>
+                </>
+              )}
+              {sec.label && (
+                <div className="fa-rail-section-label">{sec.label}</div>
+              )}
+              {(sec.items || []).map(item => {
+                const active = pageId === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    className={`fa-rail-item ${active ? "active" : ""}`}
+                    onClick={() => onPickPage(item.id)}
+                    title={item.label}
+                  >
+                    <span className="fa-rail-icon">
+                      {Icon ? <Icon name={item.icon} size={15} /> : <span>•</span>}
+                    </span>
+                    <span className="fa-rail-label">{item.label}</span>
+                  </button>
+                );
+              })}
+            </React.Fragment>
           ))}
         </div>
-      );
-    }
-
-    return (
-      <>
-        {open && <div className="fa-drawer-scrim" onClick={onClose} />}
-        <aside className={classNames("fa-browse-drawer", open && "open")} data-entity={entity} aria-hidden={!open}>
-          <div className="fa-drawer-head">
-            <div className="fa-drawer-title">
-              <span className="fa-drawer-title-dot" />
-              Browse · {ENTITY_BY_ID[entity].label}
-            </div>
-            <button className="fa-drawer-close" onClick={onClose} aria-label="Close">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-            </button>
-          </div>
-          <div className="fa-drawer-scroll">
-            {(sections || []).map((sec, i) => renderSection(sec, i))}
-          </div>
-        </aside>
-      </>
+      </nav>
     );
   }
 
@@ -1249,7 +1233,6 @@
     const [turns, setTurns] = useState([]);             // [{id, prompt, answer, tools, cards, followups, sources, kind}]
     const [value, setValue] = useState("");
     const [cmdkOpen, setCmdkOpen] = useState(false);
-    const [browseOpen, setBrowseOpen] = useState(false);
     const [viewMode, setViewMode] = useState("ai"); // "ai" | "split" | "full"
     const [pageId, setPageId] = useState(null);
     const [theme, setTheme] = useState(() => {
@@ -1261,10 +1244,8 @@
     // Keep refs to current state for the keyboard handler (so we don't rebind on every change)
     const entityRef = useRef(entity);
     const viewModeRef = useRef(viewMode);
-    const browseOpenRef = useRef(browseOpen);
     useEffect(() => { entityRef.current = entity; }, [entity]);
     useEffect(() => { viewModeRef.current = viewMode; }, [viewMode]);
-    useEffect(() => { browseOpenRef.current = browseOpen; }, [browseOpen]);
 
     // Single entity-switch handler. Wired to: topbar pills, composer chip,
     // Cmd+1/2/3, and the Cmd+K palette's "Switch entity" submenu.
@@ -1298,10 +1279,6 @@
         if (isMod && e.key === "2") { e.preventDefault(); switchEntity("lp"); return; }
         if (isMod && e.key === "3") { e.preventDefault(); switchEntity("home"); return; }
         if (e.key === "Escape") {
-          if (browseOpenRef.current) {
-            setBrowseOpen(false);
-            return;
-          }
           if (viewModeRef.current === "split" || viewModeRef.current === "full") {
             setViewMode("ai");
             return;
@@ -1400,10 +1377,9 @@
       return pid;
     }
 
-    function onBrowsePick(pid) {
+    function openPage(pid) {
       setPageId(pid);
       setViewMode("split");
-      setBrowseOpen(false);
     }
 
     const mode = turns.length === 0 ? "landing" : "thread";
@@ -1469,6 +1445,11 @@
           theme={theme}
         />
         <div className="fa-shell" data-entity={entity}>
+          <LeftRail
+            entity={entity}
+            pageId={pageId}
+            onPickPage={openPage}
+          />
           <div className="fa-main">
             <TopBar
               entity={entity}
@@ -1476,7 +1457,6 @@
               onOpenCmdk={() => setCmdkOpen(true)}
               onToggleTheme={toggleTheme}
               theme={theme}
-              onOpenBrowse={() => setBrowseOpen(true)}
             />
             <div
               className={classNames("fa-stage", "fa-stage-" + mode)}
@@ -1500,12 +1480,6 @@
               )}
             </div>
           </div>
-          <BrowseDrawer
-            open={browseOpen}
-            entity={entity}
-            onClose={() => setBrowseOpen(false)}
-            onPickPage={onBrowsePick}
-          />
           <CmdK
             open={cmdkOpen}
             onClose={() => setCmdkOpen(false)}
