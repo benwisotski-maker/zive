@@ -106,7 +106,7 @@
 }
 .fa-topbar-left {
   display: flex; align-items: center; gap: 8px;
-  flex: 1;
+  flex: 0 0 auto;
   color: var(--fg);
 }
 .fa-topbar-sep {
@@ -122,6 +122,47 @@
 .fa-topbar-right {
   display: flex; align-items: center; gap: 8px;
   flex: 0 0 auto;
+}
+
+/* ─── Topbar entity strip (3 pills, centered) ─── */
+.fa-topbar-entities {
+  display: flex; gap: 6px; flex: 1; justify-content: center;
+}
+.fa-entity-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 14px; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--fg-2);
+  font-family: inherit; font-size: 12.5px; font-weight: 500;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, box-shadow 240ms ease, border-color 160ms ease;
+}
+.fa-entity-pill:hover { background: rgba(255, 255, 255, 0.07); color: var(--fg); }
+.fa-entity-pill.active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+.fa-entity-pill[data-entity="vcfo"].active { box-shadow: 0 4px 24px -4px rgba(56, 189, 248, 0.55); }
+.fa-entity-pill[data-entity="lp"].active   { box-shadow: 0 4px 24px -4px rgba(167, 139, 250, 0.55); }
+.fa-entity-pill[data-entity="home"].active { box-shadow: 0 4px 24px -4px rgba(163, 230, 53, 0.55); }
+.fa-entity-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+}
+.fa-entity-pill[data-entity="vcfo"] .fa-entity-dot { background: hsl(196, 90%, 60%); }
+.fa-entity-pill[data-entity="lp"] .fa-entity-dot   { background: hsl(264, 85%, 70%); }
+.fa-entity-pill[data-entity="home"] .fa-entity-dot { background: hsl(85, 75%, 55%); }
+
+[data-theme="light"] .fa-entity-pill {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.6);
+}
+[data-theme="light"] .fa-entity-pill.active {
+  color: rgba(0, 0, 0, 0.9);
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.14);
 }
 
 .fa-cmdk-btn {
@@ -192,9 +233,119 @@
   padding: 64px 24px 120px;
   width: 100%;
   position: relative;
+  transition: max-width 240ms ease, padding 240ms ease;
 }
 .fa-stage-landing { justify-content: flex-start; padding-top: 16vh; }
 .fa-stage-thread { padding-top: 40px; padding-bottom: 140px; }
+
+/* Split / full view modes — stage spans the full canvas */
+.fa-stage[data-view-mode="ai"] { max-width: 880px; }
+.fa-stage[data-view-mode="split"],
+.fa-stage[data-view-mode="full"] {
+  max-width: none;
+  flex-direction: row;
+  gap: 16px;
+  padding: 24px 24px 24px;
+  align-items: stretch;
+}
+
+/* Dim the beams a touch in split/full so the page reads cleaner */
+.fa-shell:has(.fa-stage[data-view-mode="split"]) ~ .fa-beams-bg .fa-beams-overlay,
+.fa-shell:has(.fa-stage[data-view-mode="full"]) ~ .fa-beams-bg .fa-beams-overlay {
+  opacity: 0.25;
+}
+
+/* Conversation column (only renders in split/full) */
+.fa-thread-col {
+  flex: 0 0 40%;
+  min-width: 360px;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 84px);
+  max-height: calc(100vh - 84px);
+  overflow-y: auto;
+  padding-right: 8px;
+  transition: flex-basis 240ms ease, opacity 240ms ease;
+}
+.fa-stage[data-view-mode="full"] .fa-thread-col {
+  display: none;
+}
+.fa-thread-col > .fa-thread { padding-bottom: 12px; }
+.fa-thread-col > .fa-composer-stick { bottom: 0; }
+.fa-thread-col > .fa-landing { padding-top: 8vh; }
+
+/* Page column */
+.fa-page-col {
+  flex: 1;
+  min-width: 0;
+  display: flex; flex-direction: column;
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+  background-color: rgba(0,0,0,0.55);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.30);
+  min-height: calc(100vh - 84px);
+  max-height: calc(100vh - 84px);
+  transition: opacity 240ms ease;
+}
+.fa-stage[data-view-mode="ai"] .fa-page-col { display: none; }
+
+.fa-page-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  flex-shrink: 0;
+}
+.fa-page-header-crumb {
+  font-size: 12px; color: var(--muted); font-weight: 500;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.fa-page-header-actions {
+  display: inline-flex; gap: 6px;
+}
+.fa-page-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px; border-radius: 8px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--fg-2); font-size: 11.5px; font-weight: 500; cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+.fa-page-btn:hover { background: rgba(255,255,255,0.08); color: var(--fg); }
+.fa-page-btn[data-variant="primary"] {
+  background: rgba(255,255,255,0.12); color: #fff; border-color: rgba(255,255,255,0.16);
+}
+
+.fa-page-body {
+  flex: 1; overflow: auto;
+  background: var(--bg);
+}
+.fa-page-body > * { background: transparent; }
+
+[data-theme="light"] .fa-page-col {
+  background-color: rgba(255,255,255,0.85);
+  border-color: rgba(0,0,0,0.10);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.12);
+}
+[data-theme="light"] .fa-page-header {
+  background: rgba(0,0,0,0.03);
+  border-bottom-color: rgba(0,0,0,0.06);
+}
+[data-theme="light"] .fa-page-btn {
+  background: rgba(0,0,0,0.04);
+  border-color: rgba(0,0,0,0.08);
+  color: rgba(0,0,0,0.65);
+}
+[data-theme="light"] .fa-page-btn:hover { background: rgba(0,0,0,0.07); color: rgba(0,0,0,0.9); }
+[data-theme="light"] .fa-page-btn[data-variant="primary"] {
+  background: rgba(0,0,0,0.85); color: #fff; border-color: rgba(0,0,0,0.85);
+}
 
 /* ─── Landing ─── */
 .fa-landing {
@@ -918,82 +1069,6 @@
   color: var(--muted-2);
 }
 .fa-drawer-item:hover .fa-drawer-item-icon { color: var(--entity-accent); }
-
-/* ─── Page overlay (full viewport) ─── */
-.fa-page-overlay {
-  position: fixed; inset: 0;
-  z-index: 200;
-  display: flex; flex-direction: column;
-  animation: faFadeIn 200ms ease;
-}
-.fa-page-overlay-scrim {
-  position: absolute; inset: 0;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(10px) saturate(140%);
-  -webkit-backdrop-filter: blur(10px) saturate(140%);
-}
-[data-theme="light"] .fa-page-overlay-scrim { background: rgba(20,20,20,0.4); }
-.fa-page-overlay-card {
-  position: relative;
-  z-index: 1;
-  max-width: 1400px;
-  width: calc(100% - 64px);
-  margin: 32px auto;
-  max-height: calc(100vh - 64px);
-  display: flex; flex-direction: column;
-  background: rgba(18, 18, 22, 0.92);
-  backdrop-filter: blur(24px) saturate(170%);
-  -webkit-backdrop-filter: blur(24px) saturate(170%);
-  border: 1px solid rgba(255,255,255,0.10);
-  border-radius: 18px;
-  box-shadow: 0 32px 90px rgba(0,0,0,0.5);
-  overflow: hidden;
-  animation: faOverlayUp 260ms cubic-bezier(0.32, 0.72, 0, 1);
-}
-[data-theme="light"] .fa-page-overlay-card {
-  background: rgba(252, 252, 253, 0.96);
-  border-color: rgba(0,0,0,0.10);
-  box-shadow: 0 32px 90px rgba(0,0,0,0.18);
-}
-@keyframes faOverlayUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to { opacity: 1; transform: none; }
-}
-.fa-page-overlay-head {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 18px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-  flex-shrink: 0;
-}
-[data-theme="light"] .fa-page-overlay-head { border-bottom-color: rgba(0,0,0,0.06); }
-.fa-page-overlay-crumbs {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 12.5px;
-  color: var(--muted);
-}
-.fa-page-overlay-crumbs .fa-bc-sep { color: var(--muted-3); }
-.fa-page-overlay-crumbs .fa-bc-current { color: var(--fg-2); font-weight: 500; }
-.fa-page-overlay-close {
-  width: 30px; height: 30px;
-  border-radius: 8px;
-  background: transparent;
-  border: 1px solid transparent;
-  color: var(--muted);
-  display: inline-flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  transition: background 140ms ease, color 140ms ease;
-}
-.fa-page-overlay-close:hover {
-  background: rgba(255,255,255,0.08);
-  color: var(--fg);
-}
-[data-theme="light"] .fa-page-overlay-close:hover { background: rgba(0,0,0,0.06); }
-.fa-page-overlay-body {
-  flex: 1;
-  overflow-y: auto;
-  background: var(--bg);
-}
-.fa-page-overlay-body > * { background: transparent; }
 
 /* ─── Cmd+K dialog ─── */
 .fa-cmdk-overlay {

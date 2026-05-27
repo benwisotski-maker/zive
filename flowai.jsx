@@ -699,14 +699,33 @@
   // ──────────────────────────────────────────────────────────────
   // 6. Slim TopBar
   // ──────────────────────────────────────────────────────────────
-  function TopBar({ entity, onOpenCmdk, onToggleTheme, theme, onOpenBrowse }) {
+  function TopBar({ entity, onEntity, onOpenCmdk, onToggleTheme, theme, onOpenBrowse }) {
     const ZW = window.ZiveWordmark;
+    const STRIP = [
+      { id: "vcfo", label: "VCFO" },
+      { id: "lp",   label: "LP" },
+      { id: "home", label: "Home" },
+    ];
     return (
       <div className="fa-topbar" data-entity={entity}>
         <div className="fa-topbar-left">
           {ZW ? <ZW height={18} color="currentColor" /> : <span style={{ fontWeight: 600 }}>zive</span>}
           <span className="fa-topbar-sep">·</span>
           <span className="fa-topbar-product">flowai</span>
+        </div>
+        <div className="fa-topbar-entities">
+          {STRIP.map(e => (
+            <button
+              key={e.id}
+              className={`fa-entity-pill ${entity === e.id ? "active" : ""}`}
+              data-entity={e.id}
+              onClick={() => onEntity(e.id)}
+              title={`Switch to ${e.label} (⌘${e.id === "vcfo" ? 1 : e.id === "lp" ? 2 : 3})`}
+            >
+              <span className="fa-entity-dot" />
+              {e.label}
+            </button>
+          ))}
         </div>
         <div className="fa-topbar-right">
           <button className="fa-cmdk-btn" onClick={onOpenCmdk} title="Command palette (⌘K)">
@@ -1017,34 +1036,36 @@
   }
 
   // ──────────────────────────────────────────────────────────────
-  // 11. Page overlay (full-viewport, slide-up)
+  // 11. Page panel (split-view / fullscreen container)
   // ──────────────────────────────────────────────────────────────
-  function PageOverlay({ pageId, entity, pageLabel, onClose }) {
-    useEffect(() => {
-      function onKey(e) { if (e.key === "Escape") onClose(); }
-      window.addEventListener("keydown", onKey);
-      return () => window.removeEventListener("keydown", onKey);
-    }, [onClose]);
+  function PagePanel({ pageId, entity, pageLabel, viewMode, onSetViewMode }) {
     if (!pageId) return null;
+    const Icon = window.Icon;
     return (
-      <div className="fa-page-overlay" data-entity={entity}>
-        <div className="fa-page-overlay-scrim" onClick={onClose} />
-        <div className="fa-page-overlay-card">
-          <div className="fa-page-overlay-head">
-            <div className="fa-page-overlay-crumbs">
-              <span>Browse</span>
-              <span className="fa-bc-sep">›</span>
-              <span>{ENTITY_BY_ID[entity].label}</span>
-              <span className="fa-bc-sep">›</span>
-              <span className="fa-bc-current">{pageLabel}</span>
-            </div>
-            <button className="fa-page-overlay-close" onClick={onClose} aria-label="Close">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      <div className="fa-page-col" data-entity={entity}>
+        <div className="fa-page-header">
+          <div className="fa-page-header-crumb">
+            {Icon ? <Icon name="folder" size={11} /> : <span>▸</span>}
+            <span>Browse · {ENTITY_BY_ID[entity].label} · {pageLabel}</span>
+          </div>
+          <div className="fa-page-header-actions">
+            {viewMode === "split" && (
+              <button className="fa-page-btn" onClick={() => onSetViewMode("full")} title="Fullscreen">
+                <span style={{ fontSize: 12, lineHeight: 1 }}>⛶</span> Fullscreen
+              </button>
+            )}
+            {viewMode === "full" && (
+              <button className="fa-page-btn" onClick={() => onSetViewMode("split")} title="Back to split">
+                <span style={{ fontSize: 12, lineHeight: 1 }}>⤢</span> Split
+              </button>
+            )}
+            <button className="fa-page-btn" data-variant="primary" onClick={() => onSetViewMode("ai")} title="Back to AI mode">
+              ← AI mode
             </button>
           </div>
-          <div className="fa-page-overlay-body">
-            <PageHost pageId={pageId} />
-          </div>
+        </div>
+        <div className="fa-page-body">
+          <PageHost pageId={pageId} />
         </div>
       </div>
     );
@@ -1217,20 +1238,45 @@
   // ──────────────────────────────────────────────────────────────
   // 14. App root
   // ──────────────────────────────────────────────────────────────
+  const ENTITY_DEFAULT_PAGE = {
+    vcfo: "vcfo-dashboards",
+    lp:   "lp-overview",
+    home: "dashboard",
+  };
+
   function App() {
     const [entity, setEntity] = useState("vcfo");
     const [turns, setTurns] = useState([]);             // [{id, prompt, answer, tools, cards, followups, sources, kind}]
     const [value, setValue] = useState("");
     const [cmdkOpen, setCmdkOpen] = useState(false);
     const [browseOpen, setBrowseOpen] = useState(false);
-    const [overlayPageId, setOverlayPageId] = useState(null);
+    const [viewMode, setViewMode] = useState("ai"); // "ai" | "split" | "full"
+    const [pageId, setPageId] = useState(null);
     const [theme, setTheme] = useState(() => {
       try { return document.documentElement.getAttribute("data-theme") || "dark"; }
       catch (e) { return "dark"; }
     });
     const threadEndRef = useRef(null);
 
-    // Auto-scroll thread on new turn
+    // Keep refs to current state for the keyboard handler (so we don't rebind on every change)
+    const entityRef = useRef(entity);
+    const viewModeRef = useRef(viewMode);
+    const browseOpenRef = useRef(browseOpen);
+    useEffect(() => { entityRef.current = entity; }, [entity]);
+    useEffect(() => { viewModeRef.current = viewMode; }, [viewMode]);
+    useEffect(() => { browseOpenRef.current = browseOpen; }, [browseOpen]);
+
+    // Single entity-switch handler. Wired to: topbar pills, composer chip,
+    // Cmd+1/2/3, and the Cmd+K palette's "Switch entity" submenu.
+    function switchEntity(newEntity) {
+      const prev = entityRef.current;
+      setEntity(newEntity);
+      if ((viewModeRef.current === "split" || viewModeRef.current === "full") && newEntity !== prev) {
+        setPageId(ENTITY_DEFAULT_PAGE[newEntity] || null);
+      }
+    }
+
+    // Auto-scroll thread on new turn (works for both ai-mode stage and split thread-col)
     useEffect(() => {
       if (threadEndRef.current && turns.length > 0) {
         try {
@@ -1248,9 +1294,19 @@
           setCmdkOpen(o => !o);
           return;
         }
-        if (isMod && e.key === "1") { e.preventDefault(); setEntity("vcfo"); }
-        if (isMod && e.key === "2") { e.preventDefault(); setEntity("lp"); }
-        if (isMod && e.key === "3") { e.preventDefault(); setEntity("home"); }
+        if (isMod && e.key === "1") { e.preventDefault(); switchEntity("vcfo"); return; }
+        if (isMod && e.key === "2") { e.preventDefault(); switchEntity("lp"); return; }
+        if (isMod && e.key === "3") { e.preventDefault(); switchEntity("home"); return; }
+        if (e.key === "Escape") {
+          if (browseOpenRef.current) {
+            setBrowseOpen(false);
+            return;
+          }
+          if (viewModeRef.current === "split" || viewModeRef.current === "full") {
+            setViewMode("ai");
+            return;
+          }
+        }
       }
       window.addEventListener("keydown", onKey);
       return () => window.removeEventListener("keydown", onKey);
@@ -1344,13 +1400,66 @@
       return pid;
     }
 
-    function onBrowsePick(pageId) {
+    function onBrowsePick(pid) {
+      setPageId(pid);
+      setViewMode("split");
       setBrowseOpen(false);
-      setOverlayPageId(pageId);
     }
 
     const mode = turns.length === 0 ? "landing" : "thread";
     const ent = ENTITY_BY_ID[entity];
+
+    // The conversation panel (thread + composer or landing) — used in both
+    // ai-mode (centered, full-stage) and split-mode (in the left column).
+    function ConversationPanel() {
+      if (mode === "landing") {
+        return (
+          <div className="fa-landing">
+            <div className="fa-greeting">
+              <h1>Hi Morgan. What do you want to look at?</h1>
+              <div className="fa-greeting-sub">Ask anything {ent.greeting}, or pick a starter below.</div>
+            </div>
+            <Composer
+              entity={entity}
+              onEntity={switchEntity}
+              onSubmit={submitPrompt}
+              mode="landing"
+              value={value}
+              setValue={setValue}
+            />
+            <div className="fa-prompt-chips">
+              {STARTERS[entity].map((s, i) => (
+                <button key={i} className="fa-prompt-chip" onClick={() => submitPrompt(s)}>{s}</button>
+              ))}
+            </div>
+          </div>
+        );
+      }
+      return (
+        <>
+          <div className="fa-thread">
+            {turns.map((turn, i) => (
+              <ConversationTurn
+                key={turn.id}
+                turn={turn}
+                entity={entity}
+                onFollowup={submitPrompt}
+                isLatest={i === turns.length - 1}
+              />
+            ))}
+            <div ref={threadEndRef} />
+          </div>
+          <Composer
+            entity={entity}
+            onEntity={switchEntity}
+            onSubmit={submitPrompt}
+            mode="thread"
+            value={value}
+            setValue={setValue}
+          />
+        </>
+      );
+    }
 
     return (
       <>
@@ -1363,53 +1472,29 @@
           <div className="fa-main">
             <TopBar
               entity={entity}
+              onEntity={switchEntity}
               onOpenCmdk={() => setCmdkOpen(true)}
               onToggleTheme={toggleTheme}
               theme={theme}
               onOpenBrowse={() => setBrowseOpen(true)}
             />
-            <div className={classNames("fa-stage", "fa-stage-" + mode)}>
-              {mode === "landing" ? (
-                <div className="fa-landing">
-                  <div className="fa-greeting">
-                    <h1>Hi Morgan. What do you want to look at?</h1>
-                    <div className="fa-greeting-sub">Ask anything {ent.greeting}, or pick a starter below.</div>
-                  </div>
-                  <Composer
-                    entity={entity}
-                    onEntity={setEntity}
-                    onSubmit={submitPrompt}
-                    mode="landing"
-                    value={value}
-                    setValue={setValue}
-                  />
-                  <div className="fa-prompt-chips">
-                    {STARTERS[entity].map((s, i) => (
-                      <button key={i} className="fa-prompt-chip" onClick={() => submitPrompt(s)}>{s}</button>
-                    ))}
-                  </div>
-                </div>
+            <div
+              className={classNames("fa-stage", "fa-stage-" + mode)}
+              data-view-mode={viewMode}
+            >
+              {viewMode === "ai" ? (
+                <ConversationPanel />
               ) : (
                 <>
-                  <div className="fa-thread">
-                    {turns.map((turn, i) => (
-                      <ConversationTurn
-                        key={turn.id}
-                        turn={turn}
-                        entity={entity}
-                        onFollowup={submitPrompt}
-                        isLatest={i === turns.length - 1}
-                      />
-                    ))}
-                    <div ref={threadEndRef} />
+                  <div className="fa-thread-col">
+                    <ConversationPanel />
                   </div>
-                  <Composer
+                  <PagePanel
+                    pageId={pageId}
                     entity={entity}
-                    onEntity={setEntity}
-                    onSubmit={submitPrompt}
-                    mode="thread"
-                    value={value}
-                    setValue={setValue}
+                    pageLabel={pageLabel(pageId)}
+                    viewMode={viewMode}
+                    onSetViewMode={setViewMode}
                   />
                 </>
               )}
@@ -1421,18 +1506,10 @@
             onClose={() => setBrowseOpen(false)}
             onPickPage={onBrowsePick}
           />
-          {overlayPageId && (
-            <PageOverlay
-              pageId={overlayPageId}
-              entity={entity}
-              pageLabel={pageLabel(overlayPageId)}
-              onClose={() => setOverlayPageId(null)}
-            />
-          )}
           <CmdK
             open={cmdkOpen}
             onClose={() => setCmdkOpen(false)}
-            onEntity={setEntity}
+            onEntity={switchEntity}
             openReport={openReportFromCmdK}
             entity={entity}
           />
