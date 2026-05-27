@@ -433,13 +433,146 @@
   }
 
   // ──────────────────────────────────────────────────────────────
+  // 5b. Beams background — vanilla port of the React+Tailwind
+  //     animated-beams component. Driven by canvas + rAF.
+  // ──────────────────────────────────────────────────────────────
+  const MINIMUM_BEAMS = 20;
+  const BEAM_OPACITY_MAP = { subtle: 0.7, medium: 0.85, strong: 1 };
+
+  function createBeam(width, height, hueBase) {
+    const angle = -35 + Math.random() * 10;
+    return {
+      x: Math.random() * width * 1.5 - width * 0.25,
+      y: Math.random() * height * 1.5 - height * 0.25,
+      width: 30 + Math.random() * 60,
+      length: height * 2.5,
+      angle,
+      speed: 0.6 + Math.random() * 1.2,
+      opacity: 0.12 + Math.random() * 0.16,
+      hue: hueBase + Math.random() * 70,
+      pulse: Math.random() * Math.PI * 2,
+      pulseSpeed: 0.02 + Math.random() * 0.03,
+    };
+  }
+
+  function BeamsBackground({ entityHueBase, intensity, theme }) {
+    const canvasRef = useRef(null);
+    const beamsRef = useRef([]);
+    const rafRef = useRef(0);
+    const hueBaseRef = useRef(entityHueBase || 190);
+    const themeRef = useRef(theme || "dark");
+
+    useEffect(() => { hueBaseRef.current = entityHueBase || 190; }, [entityHueBase]);
+    useEffect(() => { themeRef.current = theme || "dark"; }, [theme]);
+
+    // Re-seed hues when entity (hue base) changes
+    useEffect(() => {
+      const beams = beamsRef.current;
+      if (!beams || !beams.length) return;
+      const total = beams.length;
+      beams.forEach((b, i) => {
+        b.hue = (entityHueBase || 190) + (i * 70) / total;
+      });
+    }, [entityHueBase]);
+
+    useEffect(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      const I = intensity || "strong";
+
+      function updateCanvasSize() {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = window.innerWidth * dpr;
+        canvas.height = window.innerHeight * dpr;
+        canvas.style.width = window.innerWidth + "px";
+        canvas.style.height = window.innerHeight + "px";
+        ctx.scale(dpr, dpr);
+        const totalBeams = MINIMUM_BEAMS * 1.5;
+        beamsRef.current = Array.from({ length: totalBeams }, () =>
+          createBeam(canvas.width, canvas.height, hueBaseRef.current)
+        );
+      }
+      updateCanvasSize();
+
+      function onResize() { updateCanvasSize(); }
+      window.addEventListener("resize", onResize);
+
+      function resetBeam(beam, index, total) {
+        if (!canvas) return beam;
+        const column = index % 3;
+        const spacing = canvas.width / 3;
+        beam.y = canvas.height + 100;
+        beam.x = column * spacing + spacing / 2 + (Math.random() - 0.5) * spacing * 0.5;
+        beam.width = 100 + Math.random() * 100;
+        beam.speed = 0.5 + Math.random() * 0.4;
+        beam.hue = hueBaseRef.current + (index * 70) / total;
+        beam.opacity = 0.2 + Math.random() * 0.1;
+        return beam;
+      }
+
+      function drawBeam(ctx2, beam) {
+        ctx2.save();
+        ctx2.translate(beam.x, beam.y);
+        ctx2.rotate((beam.angle * Math.PI) / 180);
+        const pulsingOpacity =
+          beam.opacity * (0.8 + Math.sin(beam.pulse) * 0.2) * (BEAM_OPACITY_MAP[I] || 1) *
+          (themeRef.current === "light" ? 0.5 : 1);
+        const gradient = ctx2.createLinearGradient(0, 0, 0, beam.length);
+        gradient.addColorStop(0, "hsla(" + beam.hue + ", 85%, 65%, 0)");
+        gradient.addColorStop(0.1, "hsla(" + beam.hue + ", 85%, 65%, " + (pulsingOpacity * 0.5).toFixed(4) + ")");
+        gradient.addColorStop(0.4, "hsla(" + beam.hue + ", 85%, 65%, " + pulsingOpacity.toFixed(4) + ")");
+        gradient.addColorStop(0.6, "hsla(" + beam.hue + ", 85%, 65%, " + pulsingOpacity.toFixed(4) + ")");
+        gradient.addColorStop(0.9, "hsla(" + beam.hue + ", 85%, 65%, " + (pulsingOpacity * 0.5).toFixed(4) + ")");
+        gradient.addColorStop(1, "hsla(" + beam.hue + ", 85%, 65%, 0)");
+        ctx2.fillStyle = gradient;
+        ctx2.fillRect(-beam.width / 2, 0, beam.width, beam.length);
+        ctx2.restore();
+      }
+
+      function animate() {
+        if (document.visibilityState === "hidden") {
+          rafRef.current = requestAnimationFrame(animate);
+          return;
+        }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.filter = "blur(35px)";
+        const totalBeams = beamsRef.current.length;
+        beamsRef.current.forEach((beam, idx) => {
+          beam.y -= beam.speed;
+          beam.pulse += beam.pulseSpeed;
+          if (beam.y + beam.length < -100) resetBeam(beam, idx, totalBeams);
+          drawBeam(ctx, beam);
+        });
+        rafRef.current = requestAnimationFrame(animate);
+      }
+      animate();
+
+      return () => {
+        cancelAnimationFrame(rafRef.current);
+        window.removeEventListener("resize", onResize);
+      };
+    }, [intensity]);
+
+    return (
+      <div className="fa-beams-bg" aria-hidden="true">
+        <canvas ref={canvasRef} className="fa-beams-canvas" />
+        <div className="fa-beams-overlay" />
+      </div>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
   // 6. Card components
   // ──────────────────────────────────────────────────────────────
   function CardShell({ card, idx, suggested, pinned, onPin, children }) {
     const sizeClass = "fa-card-" + (card.size || "md");
     const staggerCls = "fa-stagger-" + Math.min((idx || 0) + 1, 6);
+    // First card and KPI orbs become liquid showcase cards.
+    const liquidCls = (card.type === "kpiOrb" || idx === 0) ? "fa-card--liquid" : "";
     return (
-      <div className={classNames("fa-card", sizeClass, "fa-card-enter", staggerCls)}>
+      <div className={classNames("fa-card", sizeClass, "fa-card-enter", staggerCls, liquidCls)}>
         <div className="fa-card-head">
           <div className="fa-card-title">
             {card.label || card.title || card.type}
@@ -581,6 +714,201 @@
       <CardShell card={card} idx={idx} suggested={suggested} pinned={pinned} onPin={onPin}>
         {renderer(card, { onAction })}
       </CardShell>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 6b. Entity → hue base (for beams)
+  // ──────────────────────────────────────────────────────────────
+  const ENTITY_HUE_BASE = { vcfo: 190, lp: 260, home: 90, all: 30 };
+
+  // ──────────────────────────────────────────────────────────────
+  // 6c. Flow sidebar nav configs
+  // ──────────────────────────────────────────────────────────────
+  // Default-fund nav (same labels/icons as app.jsx Sidebar's default tree)
+  const HOME_NAV_CFG = [
+    { items: [
+      { id: "home",        label: "Home",        icon: "home" },
+      { id: "zive-ai",     label: "Zive AI",     icon: "sparkle" },
+      { id: "dashboard",   label: "Dashboard",   icon: "dashboard" },
+      { id: "tasks",       label: "Tasks",       icon: "tasks" },
+      { id: "bluecheck",   label: "BlueCheck",   icon: "shieldCheck" },
+      { id: "activity",    label: "Activity",    icon: "activity" },
+      { id: "documents",   label: "Documents",   icon: "folder" },
+      { id: "settings",    label: "Settings",    icon: "settings" },
+    ]},
+    { label: "Fund", items: [
+      { id: "portfolio",     label: "Portfolio",     icon: "pie" },
+      { id: "investors",     label: "Investors",     icon: "investor" },
+      { id: "capital-calls", label: "Capital Calls", icon: "capitalCall" },
+      { id: "distributions", label: "Distributions", icon: "distribution" },
+      { id: "startups",      label: "Startups",      icon: "briefcase" },
+    ]},
+    { label: "AI", items: [
+      { id: "ai-upload",  label: "AI Upload",       icon: "aiUpload" },
+      { id: "agents",     label: "Agents",          icon: "settings" },
+      { id: "doc-studio", label: "Document Studio", icon: "docStudio" },
+      { id: "mcp",        label: "MCP",             icon: "mcp" },
+    ]},
+    { label: "Accounting", items: [
+      { id: "accounting", label: "Accounting", icon: "accounting" },
+      { id: "reports",    label: "Reports",    icon: "report" },
+      { id: "quarterly",  label: "Quarterly",  icon: "quarterly" },
+      { id: "audit",      label: "Audit",      icon: "audit" },
+    ]},
+    { label: "Management", items: [
+      { id: "lp-interest",   label: "LP Interest",   icon: "briefcase" },
+      { id: "lp-onboarding", label: "LP Onboarding", icon: "onboard" },
+      { id: "deal-room",     label: "Deal Room",     icon: "dealRoom" },
+      { id: "users",         label: "Users",         icon: "users" },
+    ]},
+  ];
+
+  function navForEntity(entity) {
+    if (entity === "vcfo") return window.VCFO_NAV_CFG || [];
+    if (entity === "lp")   return window.LP_NAV_CFG   || [];
+    if (entity === "home") return HOME_NAV_CFG;
+    return null; // "all" handled separately
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 6d. FlowSidebar
+  // ──────────────────────────────────────────────────────────────
+  function FlowSidebar({ entity, collapsed, onToggleCollapsed, activePageId, onPickPage }) {
+    const Icon = window.Icon;
+    const sections = useMemo(() => navForEntity(entity), [entity]);
+
+    function renderSection(section, key) {
+      return (
+        <div className="fa-sidebar-section" key={key}>
+          {section.label && !collapsed && (
+            <div className="fa-sidebar-section-label">{section.label}</div>
+          )}
+          {section.items.map(it => (
+            <button
+              key={it.id}
+              className={classNames("fa-sidebar-item", activePageId === it.id && "active")}
+              onClick={() => onPickPage(it.id)}
+              title={collapsed ? it.label : undefined}
+            >
+              <span className="fa-sidebar-item-icon">
+                {Icon ? <Icon name={it.icon} size={16} /> : <span>•</span>}
+              </span>
+              <span className="fa-sidebar-item-label">{it.label}</span>
+            </button>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <aside className={classNames("fa-sidebar", collapsed ? "collapsed" : "expanded")} data-entity={entity}>
+        <div className="fa-sidebar-head">
+          {!collapsed && <span className="fa-sidebar-title">Browse</span>}
+          <button
+            className="fa-sidebar-toggle"
+            onClick={onToggleCollapsed}
+            title={collapsed ? "Expand" : "Collapse"}
+            aria-label="Toggle sidebar"
+          >
+            {Icon ? <Icon name="panelLeft" size={16} /> : <span>≡</span>}
+          </button>
+        </div>
+        <div className="fa-sidebar-scroll">
+          {entity === "all" ? (
+            ENTITIES.filter(e => e.id !== "all").map(e => {
+              const navs = navForEntity(e.id) || [];
+              return (
+                <div key={e.id} data-entity={e.id}>
+                  {!collapsed && (
+                    <div className="fa-sidebar-entityhead">
+                      <span className="fa-sidebar-entityhead-dot" />
+                      {e.label}
+                    </div>
+                  )}
+                  {navs.map((sec, i) => renderSection(sec, e.id + "-" + i))}
+                </div>
+              );
+            })
+          ) : (
+            (sections || []).map((sec, i) => renderSection(sec, i))
+          )}
+        </div>
+      </aside>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 6e. PageHost — renders real existing page components inline
+  // ──────────────────────────────────────────────────────────────
+  // Top-level function declarations in babel-standalone scripts become bare
+  // script-globals (lexically resolvable by identifier in this IIFE) but are
+  // NOT always present as window.X. Resolve both forms.
+  const __compCache = {};
+  const resolveComp = (name) => {
+    if (__compCache[name] !== undefined) return __compCache[name];
+    let c = null;
+    try { c = window[name]; } catch (e) {}
+    if (typeof c !== "function") {
+      try { c = (new Function("try { return typeof " + name + " !== 'undefined' ? " + name + " : null } catch (e) { return null }"))(); } catch (e) {}
+    }
+    __compCache[name] = (typeof c === "function") ? c : null;
+    return __compCache[name];
+  };
+  const ROUTE_TO_COMP = {
+    "home":              { name: "HomeScreen",     props: { onOpenFund: () => {}, onAskAI: () => {}, onOpenEntity: () => {} } },
+    "zive-ai":           { name: "ZiveAIPage" },
+    "dashboard":         { name: "DashboardPage" },
+    "tasks":             { name: "TasksPage",      props: { onOpenFund: () => {} } },
+    "bluecheck":         { name: "BlueCheckPage" },
+    "activity":          { name: "ActivityPage" },
+    "documents":         { name: "AllFilesPage" },
+    "settings":          { name: "ComingSoon",     props: { title: "Settings", icon: "settings" } },
+    "portfolio":         { name: "PortfolioPage" },
+    "investors":         { name: "InvestorsPage" },
+    "capital-calls":     { name: "CapitalCallsPage" },
+    "distributions":     { name: "DistributionsPage" },
+    "startups":          { name: "StartupsPage",   props: { onOpen: () => {} } },
+    "startup-profile":   { name: "StartupProfilePage", props: { onBack: () => {} } },
+    "ai-upload":         { name: "AIUploadPage" },
+    "agents":            { name: "AgentsPage" },
+    "doc-studio":        { name: "DocStudioPage" },
+    "mcp":               { name: "MCPPage" },
+    "accounting":        { name: "AccountingPage" },
+    "reports":           { name: "ReportsPage" },
+    "quarterly":         { name: "QuarterlyReportPage" },
+    "audit":             { name: "AuditReportPage" },
+    "lp-interest":       { name: "LPInterestPage" },
+    "lp-onboarding":     { name: "LPOnboardingPage" },
+    "deal-room":         { name: "DealRoomPage" },
+    "users":             { name: "UsersPage" },
+    "fund":              { name: "FundDetail",     props: { onBack: () => {} } },
+    "vcfo-dashboards":   { name: "VCFODashboards" },
+    "vcfo-documents":    { name: "VCFODocuments" },
+    "vcfo-api":          { name: "VCFOApi" },
+    "vcfo-investments":  { name: "VCFOInvestments" },
+    "vcfo-funds":        { name: "VCFOFunds" },
+    "vcfo-accounting":   { name: "VCFOAccounting" },
+    "vcfo-reporting":    { name: "VCFOReporting" },
+    "vcfo-lp-portal":    { name: "VCFOLPPortal" },
+    "vcfo-uda":          { name: "VCFOUDA" },
+    "vcfo-financing-docs": { name: "VCFOFinancingDocs" },
+    "vcfo-agents":       { name: "VCFOAgents" },
+    "vcfo-doc-studio":   { name: "VCFODocStudio" },
+    "vcfo-mcp":          { name: "VCFOMCP" },
+    "vcfo-users":        { name: "VCFOUsers" },
+    "lp-overview":       { name: "LPOverview" },
+    "lp-wire":           { name: "LPWireInstructions" },
+  };
+  function PageHost({ pageId }) {
+    const entry = ROUTE_TO_COMP[pageId];
+    const Comp = entry ? resolveComp(entry.name) : null;
+    if (Comp) return <Comp {...(entry.props || {})} />;
+    return (
+      <div style={{ padding: 60, textAlign: "center", color: "var(--muted)" }}>
+        <h2 style={{ fontSize: 20, fontWeight: 600, color: "var(--fg)", margin: "0 0 6px" }}>Page unavailable</h2>
+        <p style={{ fontSize: 13.5, margin: 0 }}>The "{pageId}" page isn't wired into this preview surface.</p>
+      </div>
     );
   }
 
@@ -1143,6 +1471,7 @@
     const [route, setRoute] = useState({ view: "landing" });
     const [value, setValue] = useState("");
     const [cmdkOpen, setCmdkOpen] = useState(false);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
     const [theme, setTheme] = useState(() => {
       try { return document.documentElement.getAttribute("data-theme") || "dark"; }
       catch (e) { return "dark"; }
@@ -1153,6 +1482,10 @@
       Object.keys(PINNED_SEED).forEach(k => out[k] = PINNED_SEED[k].slice());
       return out;
     });
+
+    function setPageRoute(pageId) {
+      setRoute({ view: "page", pageId });
+    }
 
     // Keyboard shortcuts
     useEffect(() => {
@@ -1245,70 +1578,115 @@
       setRoute({ view: "report", prompt: "Generate the Q4 LP update" });
     }
 
+    // Look up the friendly label for the current page (for the breadcrumb).
+    function pageLabel(pid) {
+      if (!pid) return "";
+      const lists = entity === "all"
+        ? ENTITIES.filter(e => e.id !== "all").flatMap(e => navForEntity(e.id) || [])
+        : (navForEntity(entity) || []);
+      for (const sec of lists) {
+        for (const it of (sec.items || [])) {
+          if (it.id === pid) return it.label;
+        }
+      }
+      return pid;
+    }
+
     return (
-      <div className="fa-shell" data-entity={entity}>
-        <TopBar
-          entity={entity}
-          onEntity={setEntity}
-          onOpenCmdk={() => setCmdkOpen(true)}
-          onToggleTheme={toggleTheme}
+      <>
+        <BeamsBackground
+          entityHueBase={ENTITY_HUE_BASE[entity] || 190}
+          intensity="strong"
           theme={theme}
         />
-        {route.view !== "landing" && route.view !== "report" && (
-          <RoomNav
+        <div className="fa-shell" data-entity={entity}>
+          <FlowSidebar
             entity={entity}
-            room={route.view === "room" ? route.room : null}
-            onRoom={(r) => setRoute({ view: "room", room: r })}
+            collapsed={sidebarCollapsed}
+            onToggleCollapsed={() => setSidebarCollapsed(v => !v)}
+            activePageId={route.view === "page" ? route.pageId : null}
+            onPickPage={setPageRoute}
           />
-        )}
-        {route.view === "landing" && (
-          <Landing
-            entity={entity}
-            value={value}
-            setValue={setValue}
-            onSubmit={submitPrompt}
+          <div className="fa-main">
+            <TopBar
+              entity={entity}
+              onEntity={setEntity}
+              onOpenCmdk={() => setCmdkOpen(true)}
+              onToggleTheme={toggleTheme}
+              theme={theme}
+            />
+            {route.view === "page" && (
+              <>
+                <div className="fa-breadcrumb">
+                  <span>Browse</span>
+                  <span className="fa-bc-sep">·</span>
+                  <span>{ENTITY_BY_ID[entity].label}</span>
+                  <span className="fa-bc-sep">·</span>
+                  <span className="fa-bc-current">{pageLabel(route.pageId)}</span>
+                  <button onClick={() => setRoute({ view: "landing" })} title="Back to AI">← Back to AI</button>
+                </div>
+                <div className="fa-page-host">
+                  <PageHost pageId={route.pageId} />
+                </div>
+              </>
+            )}
+            {route.view !== "landing" && route.view !== "report" && route.view !== "page" && (
+              <RoomNav
+                entity={entity}
+                room={route.view === "room" ? route.room : null}
+                onRoom={(r) => setRoute({ view: "room", room: r })}
+              />
+            )}
+            {route.view === "landing" && (
+              <Landing
+                entity={entity}
+                value={value}
+                setValue={setValue}
+                onSubmit={submitPrompt}
+                onEntity={setEntity}
+                pinnedCards={pinnedByEntity[entity]}
+                onPin={pinCard}
+              />
+            )}
+            {route.view === "response" && (
+              <ResponseView
+                entity={entity}
+                prompt={route.prompt}
+                response={route.response}
+                value={value}
+                setValue={setValue}
+                onSubmit={submitPrompt}
+                onEntity={setEntity}
+                onFollowup={submitPrompt}
+                onPin={pinCard}
+                pinnedIds={pinnedIds}
+              />
+            )}
+            {route.view === "room" && (
+              <RoomView
+                entity={entity}
+                room={route.room}
+                onSubmit={submitPrompt}
+                value={value}
+                setValue={setValue}
+                onEntity={setEntity}
+                pinnedCards={pinnedByEntity[entity]}
+                onPin={pinCard}
+              />
+            )}
+            {route.view === "report" && (
+              <ReportView entity={entity} onBackHome={() => setRoute({ view: "landing" })} />
+            )}
+          </div>
+          <CmdK
+            open={cmdkOpen}
+            onClose={() => setCmdkOpen(false)}
             onEntity={setEntity}
-            pinnedCards={pinnedByEntity[entity]}
-            onPin={pinCard}
-          />
-        )}
-        {route.view === "response" && (
-          <ResponseView
+            openReport={openReport}
             entity={entity}
-            prompt={route.prompt}
-            response={route.response}
-            value={value}
-            setValue={setValue}
-            onSubmit={submitPrompt}
-            onEntity={setEntity}
-            onFollowup={submitPrompt}
-            onPin={pinCard}
-            pinnedIds={pinnedIds}
           />
-        )}
-        {route.view === "room" && (
-          <RoomView
-            entity={entity}
-            room={route.room}
-            onSubmit={submitPrompt}
-            value={value}
-            setValue={setValue}
-            onEntity={setEntity}
-            pinnedCards={pinnedByEntity[entity]}
-            onPin={pinCard}
-          />
-        )}
-        {route.view === "report" && (
-          <ReportView entity={entity} onBackHome={() => setRoute({ view: "landing" })} />
-        )}
-        <CmdK
-          open={cmdkOpen}
-          onClose={() => setCmdkOpen(false)}
-          onEntity={setEntity}
-          openReport={openReport}
-          entity={entity}
-        />
-      </div>
+        </div>
+      </>
     );
   }
 
