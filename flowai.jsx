@@ -1,4 +1,4 @@
-// Zive — Flow AI: AI-first fund-administration surface.
+// Zive — Flow AI: conversation-first AI surface.
 // Single-file IIFE. Mounts to #root. Independent of app.jsx's auto-mount
 // (which is suppressed via window.__ZEXP_SKIP_APP_BOOT). Uses script-globals
 // (Icon, ZiveWordmark, etc.) attached to window by components.jsx.
@@ -7,34 +7,17 @@
   const { useState, useEffect, useRef, useMemo, useLayoutEffect } = React;
 
   // ──────────────────────────────────────────────────────────────
-  // 1. Entity catalog
+  // 1. Entity catalog (3 only — "All" entity dropped)
   // ──────────────────────────────────────────────────────────────
   const ENTITIES = [
     { id: "vcfo", label: "Admin VCFO", short: "VCFO", greeting: "managing the fund" },
     { id: "lp",   label: "Admin V LP", short: "LP",   greeting: "as the LP" },
     { id: "home", label: "Home",       short: "Home", greeting: "across workspaces" },
-    { id: "all",  label: "All",        short: "All",  greeting: "cross-entity" },
   ];
   const ENTITY_BY_ID = Object.fromEntries(ENTITIES.map(e => [e.id, e]));
 
   // ──────────────────────────────────────────────────────────────
-  // 2. Room catalogs per entity
-  // ──────────────────────────────────────────────────────────────
-  const ROOMS = {
-    vcfo: ["Pulse", "Portfolio", "Money", "LPs", "Reports", "Docs"],
-    lp:   ["Account", "Transactions", "Documents", "Comms"],
-    home: ["Triage", "Ask", "Activity", "Calendar"],
-    all:  ["Cross-fund", "Models", "Audit", "Compliance"],
-  };
-  const WIRED_ROOMS = {
-    vcfo: new Set(["Pulse", "Portfolio", "Reports"]),
-    lp:   new Set(["Account"]),
-    home: new Set(["Triage"]),
-    all:  new Set(["Cross-fund"]),
-  };
-
-  // ──────────────────────────────────────────────────────────────
-  // 3. Starter prompts per entity
+  // 2. Starter prompts per entity
   // ──────────────────────────────────────────────────────────────
   const STARTERS = {
     vcfo: [
@@ -55,16 +38,10 @@
       "Show my open approvals",
       "Calendar for the week",
     ],
-    all: [
-      "Roll up performance across all funds",
-      "Cross-fund cash position",
-      "Compliance items aging > 30 days",
-      "Model: what if we mark Admin V up 10%?",
-    ],
   };
 
   // ──────────────────────────────────────────────────────────────
-  // 4. Canned AI responses — 4 prompts × 4 entities
+  // 3. Canned AI responses — 4 prompts × 3 entities
   //    Each: { answer, tools, cards, followups, sources }
   // ──────────────────────────────────────────────────────────────
   const RESPONSES = {
@@ -84,7 +61,7 @@
           { id: "nav-insight", type: "insight", size: "lg", title: "AI note", body: "Three of your portfolio cos are up-round candidates in the next 90 days [3]; mark-to-mark would lift aggregate NAV ~6%." },
         ],
         followups: ["Show me up-round candidates", "Compare Admin V to peer benchmark", "Draft Q4 LP update"],
-        sources: { 1: "Source: Internal NAV roll-up, 2026-05-26", 2: "Source: Q4 valuation memo, Admin IV / RE II", 3: "Source: Portfolio pipeline tracker" },
+        sources: { 1: "Source: Internal NAV roll-up, 2026-05-27", 2: "Source: Q4 valuation memo, Admin IV / RE II", 3: "Source: Portfolio pipeline tracker" },
       },
       "Draft a capital call for Admin V at 12%": {
         answer: "Drafted a 12% call against Admin Ventures V: $6.96M total across 41 LPs [1]. Wire instructions and side-letter exceptions are flagged for review [2].",
@@ -109,7 +86,7 @@
           ] },
         ],
         followups: ["Send notices now", "Show the per-LP letter", "What if we go 8% instead?"],
-        sources: { 1: "Source: Admin V cap table, 2026-05-26", 2: "Source: LP side letters DB" },
+        sources: { 1: "Source: Admin V cap table, 2026-05-27", 2: "Source: LP side letters DB" },
       },
       "What needs my attention this week?": {
         answer: "5 items rising to the top: one capital call to approve, two reconciliations stalled, a tax-form deadline, and a valuation memo overdue [1].",
@@ -130,14 +107,13 @@
         sources: { 1: "Source: Workflow queue + calendar" },
       },
       "Generate the Q4 LP update": {
-        answer: "Draft of the Q4 letter for Admin Ventures V is ready in the doc pane. Sections: header, summary, performance, portfolio update, wire instructions [1][2].",
+        answer: "Draft of the Q4 letter for Admin Ventures V is ready — chat history on the left, live doc on the right [1][2].",
         tools: ["Loading Q4 financials", "Pulling portfolio company updates", "Drafting sections", "Inserting citations"],
         cards: [
           { id: "qr-doc", type: "doc", size: "lg", title: "Q4 2025 LP Letter — Admin Ventures V", updated: "draft just now", snippet: "Dear Limited Partners, Admin V closed Q4 with NAV of $58.2M, up 3.4% Q-o-Q…" },
           { id: "qr-kpi", type: "kpiOrb", size: "md", label: "Net IRR (Admin V)", value: "18.4%", delta: "+1.2pp vs Q3" },
-          { id: "qr-action", type: "action", size: "md", label: "Open in report mode", icon: "external", hint: "Side-by-side chat + doc" },
         ],
-        followups: ["Open in report mode", "Tighten the summary", "Add a portfolio company highlight"],
+        followups: ["Tighten the summary", "Add a portfolio company highlight", "Export to PDF"],
         sources: { 1: "Source: Q4 financials, finalized 2026-04-30", 2: "Source: Portfolio company memos" },
       },
     },
@@ -280,118 +256,10 @@
         sources: { 1: "Source: Google Calendar + travel itinerary" },
       },
     },
-
-    all: {
-      "Roll up performance across all funds": {
-        answer: "Across all 3 funds, aggregate NAV is $129.4M with a blended net IRR of 16.1% and 0.31x DPI [1].",
-        tools: ["Loading 3 fund books", "Computing pooled IRR (net)", "Computing pooled DPI / TVPI"],
-        cards: [
-          { id: "perf-kpi", type: "kpiOrb", size: "md", label: "Pooled Net IRR", value: "16.1%", delta: "+0.7pp vs Q3" },
-          { id: "perf-kpi2", type: "kpiOrb", size: "sm", label: "DPI", value: "0.31x", delta: "+0.04x YTD" },
-          { id: "perf-kpi3", type: "kpiOrb", size: "sm", label: "TVPI", value: "1.42x", delta: "+0.08x YTD" },
-          { id: "perf-kpi4", type: "kpiOrb", size: "sm", label: "Aggregate NAV", value: "$129.4M", delta: "+2.1% Q-o-Q" },
-          { id: "perf-table", type: "table", size: "xl", title: "Performance by fund", columns: ["Fund", "Vintage", "Called", "NAV", "DPI", "TVPI", "Net IRR"], rows: [
-            ["Admin Ventures V",     "2022", "$48.5M", "$58.2M", "0.12x", "1.32x", "18.4%"],
-            ["Admin Ventures IV",    "2019", "$72.0M", "$41.0M", "0.84x", "1.41x", "14.8%"],
-            ["Admin Real Estate II", "2020", "$54.0M", "$30.2M", "0.22x", "1.18x", "9.6%"],
-          ], summary: "Admin V leading on IRR; Admin IV leading on DPI." },
-          { id: "perf-spark", type: "sparkline", size: "lg", label: "Pooled NAV — 4 yr", points: [62,71,84,92,98,105,112,118,121,124,127,129.4], value: "$129.4M" },
-        ],
-        followups: ["Compare to peer benchmark", "Project to year-end", "Drill into Admin RE II"],
-        sources: { 1: "Source: Pooled performance engine, 2026-Q1 close" },
-      },
-      "Cross-fund cash position": {
-        answer: "Aggregate cash on hand is $14.2M across 7 bank accounts [1]. Admin V has the highest reserve, RE II is closest to its operating minimum [2].",
-        tools: ["Polling 7 bank accounts", "Joining FX (none today)", "Computing reserves vs. minimums"],
-        cards: [
-          { id: "cash-kpi", type: "kpiOrb", size: "md", label: "Aggregate cash", value: "$14.2M", delta: "+$0.4M vs last week" },
-          { id: "cash-kpi2", type: "kpiOrb", size: "sm", label: "Accounts", value: "7", delta: "3 banks" },
-          { id: "cash-kpi3", type: "kpiOrb", size: "sm", label: "Min reserve violations", value: "0", delta: "All clear" },
-          { id: "cash-table", type: "table", size: "xl", title: "Cash by fund / account", columns: ["Fund", "Bank", "Account", "Balance", "Min reserve"], rows: [
-            ["Admin Ventures V", "JPM",   "•••4471", "$6.20M", "$1.00M"],
-            ["Admin Ventures V", "SVB",   "•••8302", "$0.84M", "$0.20M"],
-            ["Admin Ventures IV","JPM",   "•••1180", "$3.10M", "$0.50M"],
-            ["Admin Ventures IV","First Republic", "•••6622", "$1.40M", "$0.20M"],
-            ["Admin RE II",     "JPM",    "•••9008", "$1.85M", "$1.50M"],
-            ["Admin RE II",     "Cadence","•••2244", "$0.41M", "$0.10M"],
-            ["Operating",       "JPM",    "•••0001", "$0.40M", "$0.10M"],
-          ], summary: "RE II JPM is $0.35M above its min — flag for upcoming property tax." },
-        ],
-        followups: ["Move $1M to RE II ahead of tax", "Open the sweep policy", "Show cash trend by fund"],
-        sources: { 1: "Source: Treasury daily feed, 2026-05-27", 2: "Source: Treasury policy doc v3.2" },
-      },
-      "Compliance items aging > 30 days": {
-        answer: "4 compliance items have been open > 30 days [1]. Two are documentation refreshes; one is a fund-level annual filing.",
-        tools: ["Scanning compliance queue", "Filtering age > 30 days", "Tagging by severity"],
-        cards: [
-          { id: "comp-table", type: "table", size: "xl", title: "Aged compliance items", columns: ["Item", "Fund", "Severity", "Age", "Owner"], rows: [
-            ["W-9 refresh — Atlas Foundation",     "Admin V",   "Low",    "44 days", "Compliance"],
-            ["FATCA self-cert — Riverbend Capital","Admin V",   "Medium", "38 days", "Compliance"],
-            ["Form ADV annual update",              "Firmwide", "High",   "35 days", "Legal"],
-            ["Anti-bribery training — Operations",  "Firmwide", "Low",    "31 days", "HR"],
-          ], summary: "Form ADV is the only High-severity item — recommend prioritizing this week." },
-          { id: "comp-kpi", type: "kpiOrb", size: "sm", label: "Aged items", value: "4", delta: "1 High severity" },
-          { id: "comp-kpi2", type: "kpiOrb", size: "sm", label: "Oldest", value: "44d", delta: "W-9 refresh" },
-          { id: "comp-action", type: "action", size: "md", label: "Open compliance triage", icon: "shield", hint: "Bulk assign" },
-        ],
-        followups: ["Assign Form ADV to Legal", "Send W-9 reminder to Atlas", "Show all closed items"],
-        sources: { 1: "Source: Compliance register" },
-      },
-      "Model: what if we mark Admin V up 10%?": {
-        answer: "A 10% Admin V mark-up would lift aggregate NAV by $5.82M (+4.5%) and pooled net IRR by ~0.9pp [1]. Carried interest crosses the hurdle in 2 LP tranches [2].",
-        tools: ["Cloning Admin V book", "Applying +10% mark-up", "Recomputing pooled NAV / IRR", "Checking waterfall"],
-        cards: [
-          { id: "mod-kpi", type: "kpiOrb", size: "md", label: "Aggregate NAV (modeled)", value: "$135.2M", delta: "+$5.82M / +4.5%" },
-          { id: "mod-kpi2", type: "kpiOrb", size: "sm", label: "Pooled IRR (modeled)", value: "17.0%", delta: "+0.9pp" },
-          { id: "mod-kpi3", type: "kpiOrb", size: "sm", label: "Carry crossover", value: "2 of 6", delta: "Tranches" },
-          { id: "mod-insight", type: "insight", size: "lg", title: "Watch-outs", body: "Carry crossing the hurdle changes the Q4 waterfall split — recommend running the LP-side estimator before publishing [3]. Audit will likely want supporting Series B comps for any Admin V company we mark." },
-          { id: "mod-table", type: "table", size: "lg", title: "Before / after", columns: ["Metric", "Today", "Modeled", "Δ"], rows: [
-            ["Aggregate NAV", "$129.4M", "$135.2M", "+$5.82M"],
-            ["Pooled IRR",    "16.1%",   "17.0%",   "+0.9pp"],
-            ["TVPI",          "1.42x",   "1.47x",   "+0.05x"],
-            ["DPI",           "0.31x",   "0.31x",   "—"],
-          ] },
-        ],
-        followups: ["Run the LP estimator", "Save this as a scenario", "What if we mark RE II instead?"],
-        sources: { 1: "Source: Scenario engine", 2: "Source: Admin V waterfall model v2.1", 3: "Source: Audit guidance, KPMG memo Q3" },
-      },
-    },
-  };
-
-  // Seed pinned cards per entity (used on Landing)
-  const PINNED_SEED = {
-    vcfo: [
-      { id: "pin-v-1", type: "kpiOrb", size: "sm", label: "Aggregate NAV", value: "$129.4M", delta: "+2.1% vs Q3" },
-      { id: "pin-v-2", type: "kpiOrb", size: "sm", label: "Cash on hand", value: "$14.2M", delta: "Across 7 accts" },
-      { id: "pin-v-3", type: "kpiOrb", size: "sm", label: "Open tasks",   value: "7", delta: "2 aging" },
-      { id: "pin-v-4", type: "sparkline", size: "lg", label: "NAV trend — 12 months", points: [110,113,118,122,125,123,127,128,129,128,130,129.4], value: "$129.4M" },
-    ],
-    lp: [
-      { id: "pin-l-1", type: "kpiOrb", size: "md", label: "Total LP balance", value: "$4.62M", delta: "+1.8% Q-o-Q" },
-      { id: "pin-l-2", type: "kpiOrb", size: "sm", label: "Unfunded",  value: "$1.56M", delta: "Across 2 funds" },
-      { id: "pin-l-3", type: "kpiOrb", size: "sm", label: "DPI (blended)", value: "0.42x", delta: "+0.03x YTD" },
-      { id: "pin-l-4", type: "doc", size: "lg", title: "Q4 2025 LP Letter — Admin Ventures V", updated: "received Apr 8", snippet: "Dear Limited Partners, Admin V closed Q4 with NAV of $58.2M, up 3.4% Q-o-Q…" },
-    ],
-    home: [
-      { id: "pin-h-1", type: "kpiOrb", size: "sm", label: "Inbox unread", value: "12", delta: "3 from LPs" },
-      { id: "pin-h-2", type: "kpiOrb", size: "sm", label: "Approvals",    value: "4", delta: "1 aging > 3d" },
-      { id: "pin-h-3", type: "kpiOrb", size: "sm", label: "Meetings today", value: "5", delta: "Next: 11:00 AM" },
-      { id: "pin-h-4", type: "tasks", size: "lg", title: "On deck", items: [
-        { text: "Approve wire — Admin V $120K", due: "By 2pm" },
-        { text: "Reply to Maple Endowment", due: "Today" },
-        { text: "K-1 for Acorn LLC overdue", due: "Overdue" },
-      ] },
-    ],
-    all: [
-      { id: "pin-a-1", type: "kpiOrb", size: "md", label: "Pooled Net IRR", value: "16.1%", delta: "+0.7pp vs Q3" },
-      { id: "pin-a-2", type: "kpiOrb", size: "sm", label: "DPI",  value: "0.31x", delta: "+0.04x YTD" },
-      { id: "pin-a-3", type: "kpiOrb", size: "sm", label: "TVPI", value: "1.42x", delta: "+0.08x YTD" },
-      { id: "pin-a-4", type: "sparkline", size: "lg", label: "Pooled NAV — 4 yr", points: [62,71,84,92,98,105,112,118,121,124,127,129.4], value: "$129.4M" },
-    ],
   };
 
   // ──────────────────────────────────────────────────────────────
-  // 5. Helpers
+  // 4. Helpers
   // ──────────────────────────────────────────────────────────────
   function renderAnswerText(text, sources) {
     if (!text) return null;
@@ -433,7 +301,7 @@
   }
 
   // ──────────────────────────────────────────────────────────────
-  // 5b. Beams background — vanilla port of the React+Tailwind
+  // 4b. Beams background — vanilla port of the React+Tailwind
   //     animated-beams component. Driven by canvas + rAF.
   // ──────────────────────────────────────────────────────────────
   const MINIMUM_BEAMS = 20;
@@ -465,7 +333,6 @@
     useEffect(() => { hueBaseRef.current = entityHueBase || 190; }, [entityHueBase]);
     useEffect(() => { themeRef.current = theme || "dark"; }, [theme]);
 
-    // Re-seed hues when entity (hue base) changes
     useEffect(() => {
       const beams = beamsRef.current;
       if (!beams || !beams.length) return;
@@ -564,37 +431,24 @@
   }
 
   // ──────────────────────────────────────────────────────────────
-  // 6. Card components
+  // 5. Card components — two-tier gradient X-card style
   // ──────────────────────────────────────────────────────────────
-  function CardShell({ card, idx, suggested, pinned, onPin, children }) {
+  function CardShell({ card, idx, suggested, children }) {
     const sizeClass = "fa-card-" + (card.size || "md");
     const staggerCls = "fa-stagger-" + Math.min((idx || 0) + 1, 6);
-    // First card and KPI orbs become liquid showcase cards.
-    const liquidCls = (card.type === "kpiOrb" || idx === 0) ? "fa-card--liquid" : "";
     return (
-      <div className={classNames("fa-card", sizeClass, "fa-card-enter", staggerCls, liquidCls)}>
-        <div className="fa-card-head">
-          <div className="fa-card-title">
-            {card.label || card.title || card.type}
+      <div className={classNames("fa-card", sizeClass, "fa-card-enter", staggerCls)}>
+        <div className="fa-card-inner">
+          <div className="fa-card-head">
+            <div className="fa-card-title">
+              {card.label || card.title || card.type}
+            </div>
+            <div className="fa-card-actions">
+              {suggested && <span className="fa-suggested-badge">✦ AI suggested</span>}
+            </div>
           </div>
-          <div className="fa-card-actions">
-            {suggested && <span className="fa-suggested-badge">✦ AI suggested</span>}
-            {onPin && (
-              <button
-                className={classNames("fa-card-pin", pinned && "pinned")}
-                onClick={() => onPin(card)}
-                title={pinned ? "Unpin from dashboard" : "Pin to dashboard"}
-                aria-label="Pin"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 17v5" />
-                  <path d="M9 10.76V6h6v4.76a2 2 0 0 0 .59 1.41L18 14H6l2.41-1.83A2 2 0 0 0 9 10.76Z" />
-                </svg>
-              </button>
-            )}
-          </div>
+          {children}
         </div>
-        {children}
       </div>
     );
   }
@@ -708,24 +562,24 @@
     action:    (card, opts) => <ActionCard card={card} onClick={opts && opts.onAction} />,
   };
 
-  function CardRender({ card, idx, suggested, pinned, onPin, onAction }) {
+  function CardRender({ card, idx, suggested, onAction }) {
     const renderer = CARD_RENDERERS[card.type] || (() => <div className="fa-muted">Unknown card</div>);
     return (
-      <CardShell card={card} idx={idx} suggested={suggested} pinned={pinned} onPin={onPin}>
+      <CardShell card={card} idx={idx} suggested={suggested}>
         {renderer(card, { onAction })}
       </CardShell>
     );
   }
 
   // ──────────────────────────────────────────────────────────────
-  // 6b. Entity → hue base (for beams)
+  // 5b. Entity → hue base (for beams)
   // ──────────────────────────────────────────────────────────────
-  const ENTITY_HUE_BASE = { vcfo: 190, lp: 260, home: 90, all: 30 };
+  const ENTITY_HUE_BASE = { vcfo: 190, lp: 260, home: 90 };
+  const ENTITY_DOT = { vcfo: "#38BDF8", lp: "#7C5CFF", home: "#84CC16" };
 
   // ──────────────────────────────────────────────────────────────
-  // 6c. Flow sidebar nav configs
+  // 5c. Flow nav configs (for Browse drawer)
   // ──────────────────────────────────────────────────────────────
-  // Default-fund nav (same labels/icons as app.jsx Sidebar's default tree)
   const HOME_NAV_CFG = [
     { items: [
       { id: "home",        label: "Home",        icon: "home" },
@@ -768,82 +622,12 @@
     if (entity === "vcfo") return window.VCFO_NAV_CFG || [];
     if (entity === "lp")   return window.LP_NAV_CFG   || [];
     if (entity === "home") return HOME_NAV_CFG;
-    return null; // "all" handled separately
+    return [];
   }
 
   // ──────────────────────────────────────────────────────────────
-  // 6d. FlowSidebar
+  // 5d. PageHost — renders real existing page components inline
   // ──────────────────────────────────────────────────────────────
-  function FlowSidebar({ entity, collapsed, onToggleCollapsed, activePageId, onPickPage }) {
-    const Icon = window.Icon;
-    const sections = useMemo(() => navForEntity(entity), [entity]);
-
-    function renderSection(section, key) {
-      return (
-        <div className="fa-sidebar-section" key={key}>
-          {section.label && !collapsed && (
-            <div className="fa-sidebar-section-label">{section.label}</div>
-          )}
-          {section.items.map(it => (
-            <button
-              key={it.id}
-              className={classNames("fa-sidebar-item", activePageId === it.id && "active")}
-              onClick={() => onPickPage(it.id)}
-              title={collapsed ? it.label : undefined}
-            >
-              <span className="fa-sidebar-item-icon">
-                {Icon ? <Icon name={it.icon} size={16} /> : <span>•</span>}
-              </span>
-              <span className="fa-sidebar-item-label">{it.label}</span>
-            </button>
-          ))}
-        </div>
-      );
-    }
-
-    return (
-      <aside className={classNames("fa-sidebar", collapsed ? "collapsed" : "expanded")} data-entity={entity}>
-        <div className="fa-sidebar-head">
-          {!collapsed && <span className="fa-sidebar-title">Browse</span>}
-          <button
-            className="fa-sidebar-toggle"
-            onClick={onToggleCollapsed}
-            title={collapsed ? "Expand" : "Collapse"}
-            aria-label="Toggle sidebar"
-          >
-            {Icon ? <Icon name="panelLeft" size={16} /> : <span>≡</span>}
-          </button>
-        </div>
-        <div className="fa-sidebar-scroll">
-          {entity === "all" ? (
-            ENTITIES.filter(e => e.id !== "all").map(e => {
-              const navs = navForEntity(e.id) || [];
-              return (
-                <div key={e.id} data-entity={e.id}>
-                  {!collapsed && (
-                    <div className="fa-sidebar-entityhead">
-                      <span className="fa-sidebar-entityhead-dot" />
-                      {e.label}
-                    </div>
-                  )}
-                  {navs.map((sec, i) => renderSection(sec, e.id + "-" + i))}
-                </div>
-              );
-            })
-          ) : (
-            (sections || []).map((sec, i) => renderSection(sec, i))
-          )}
-        </div>
-      </aside>
-    );
-  }
-
-  // ──────────────────────────────────────────────────────────────
-  // 6e. PageHost — renders real existing page components inline
-  // ──────────────────────────────────────────────────────────────
-  // Top-level function declarations in babel-standalone scripts become bare
-  // script-globals (lexically resolvable by identifier in this IIFE) but are
-  // NOT always present as window.X. Resolve both forms.
   const __compCache = {};
   const resolveComp = (name) => {
     if (__compCache[name] !== undefined) return __compCache[name];
@@ -913,42 +697,20 @@
   }
 
   // ──────────────────────────────────────────────────────────────
-  // 7. TopBar
+  // 6. Slim TopBar
   // ──────────────────────────────────────────────────────────────
-  function TopBar({ entity, onEntity, onOpenCmdk, onToggleTheme, theme }) {
+  function TopBar({ entity, onOpenCmdk, onToggleTheme, theme, onOpenBrowse }) {
     const ZW = window.ZiveWordmark;
     return (
       <div className="fa-topbar" data-entity={entity}>
         <div className="fa-topbar-left">
-          {ZW ? <ZW height={20} color="currentColor" /> : <span style={{ fontWeight: 600 }}>Zive</span>}
-          <span style={{ fontSize: 11, color: "var(--muted)", padding: "2px 8px", borderRadius: 999, background: "var(--surface-2)", border: "1px solid var(--border)" }}>Flow AI</span>
-        </div>
-        <div className="fa-topbar-center">
-          {ENTITIES.map(e => (
-            <button
-              key={e.id}
-              className={classNames("fa-entity-tab", entity === e.id && "active")}
-              onClick={() => onEntity(e.id)}
-              data-entity={e.id}
-              style={{
-                "--entity-accent": e.id === "vcfo" ? "var(--entity-accent)" :
-                                    e.id === "lp"   ? "#7C5CFF" :
-                                    e.id === "home" ? "#84CC16" : "#F59E0B",
-                "--entity-glow":   e.id === "vcfo" ? "var(--entity-glow)" :
-                                    e.id === "lp"   ? "rgba(124,92,255,0.35)" :
-                                    e.id === "home" ? "rgba(132,204,22,0.35)" :
-                                                       "rgba(245,158,11,0.35)",
-              }}
-            >
-              <span className="fa-tab-dot" />
-              {e.label}
-            </button>
-          ))}
+          {ZW ? <ZW height={18} color="currentColor" /> : <span style={{ fontWeight: 600 }}>zive</span>}
+          <span className="fa-topbar-sep">·</span>
+          <span className="fa-topbar-product">flowai</span>
         </div>
         <div className="fa-topbar-right">
-          <button className="fa-cmdk-btn" onClick={onOpenCmdk}>
-            <span>Ask anything</span>
-            <kbd>⌘ K</kbd>
+          <button className="fa-cmdk-btn" onClick={onOpenCmdk} title="Command palette (⌘K)">
+            <span>⌘ K</span>
           </button>
           <button className="fa-theme-btn" onClick={onToggleTheme} title="Toggle theme" aria-label="Toggle theme">
             {theme === "dark" ? (
@@ -957,16 +719,24 @@
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
             )}
           </button>
-          <div className="fa-profile-orb">MC</div>
+          <button className="fa-browse-btn" onClick={onOpenBrowse} title="Browse">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+              <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+              <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+              <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+            </svg>
+            <span>Browse</span>
+          </button>
         </div>
       </div>
     );
   }
 
   // ──────────────────────────────────────────────────────────────
-  // 8. Composer
+  // 7. Composer (landing + thread states)
   // ──────────────────────────────────────────────────────────────
-  function Composer({ entity, onEntity, onSubmit, mode, value, setValue, starters, onStarter }) {
+  function Composer({ entity, onEntity, onSubmit, mode, value, setValue }) {
     const [popOpen, setPopOpen] = useState(false);
     const inputRef = useRef(null);
     const ent = ENTITY_BY_ID[entity];
@@ -977,68 +747,57 @@
       }
     }
 
-    const wrapClass = classNames("fa-composer", mode === "landing" ? "fa-composer-landing" : "fa-composer-bar");
+    const wrapClass = classNames("fa-composer", mode === "landing" ? "fa-composer-landing" : "fa-composer-stick");
 
     return (
-      <>
-        <div className={wrapClass}>
-          <div className="fa-composer-row">
-            <div style={{ position: "relative" }}>
-              <button className="fa-entity-chip" onClick={() => setPopOpen(p => !p)} aria-haspopup="menu">
-                <span className="fa-entity-chip-dot" />
-                {ent.label}
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.6 }}><path d="M6 9l6 6 6-6"/></svg>
-              </button>
-              {popOpen && (
-                <div className="fa-entity-chip-pop" onMouseLeave={() => setPopOpen(false)}>
-                  {ENTITIES.map(e => (
-                    <button
-                      key={e.id}
-                      className={classNames(entity === e.id && "active")}
-                      onClick={() => { onEntity(e.id); setPopOpen(false); }}
-                    >
-                      <span style={{
-                        width: 7, height: 7, borderRadius: 999, display: "inline-block",
-                        background: e.id === "vcfo" ? "#38BDF8" : e.id === "lp" ? "#7C5CFF" : e.id === "home" ? "#84CC16" : "#F59E0B",
-                      }} />
-                      {e.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <input
-              ref={inputRef}
-              className="fa-composer-input"
-              placeholder={mode === "landing" ? `Ask anything ${ent.greeting}…` : "Ask, draft, or compose…"}
-              value={value}
-              onChange={e => setValue(e.target.value)}
-              onKeyDown={handleKey}
-              autoFocus={mode === "landing"}
-            />
-            <button
-              className="fa-composer-send"
-              disabled={!value || !value.trim()}
-              onClick={() => value && value.trim() && onSubmit(value.trim())}
-              aria-label="Send"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      <div className={wrapClass}>
+        <div className="fa-composer-row">
+          <div style={{ position: "relative" }}>
+            <button className="fa-entity-chip" onClick={() => setPopOpen(p => !p)} aria-haspopup="menu">
+              <span className="fa-entity-chip-dot" />
+              {ent.short}
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.6 }}><path d="M6 9l6 6 6-6"/></svg>
             </button>
+            {popOpen && (
+              <div className="fa-entity-popover" onMouseLeave={() => setPopOpen(false)}>
+                {ENTITIES.map(e => (
+                  <button
+                    key={e.id}
+                    className={classNames(entity === e.id && "active")}
+                    onClick={() => { onEntity(e.id); setPopOpen(false); }}
+                  >
+                    <span className="fa-entity-popover-swatch" style={{ background: ENTITY_DOT[e.id] }} />
+                    <span style={{ flex: 1, textAlign: "left" }}>{e.label}</span>
+                    {entity === e.id && <span style={{ fontSize: 11, color: "var(--muted)" }}>✓</span>}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
+          <input
+            ref={inputRef}
+            className="fa-composer-input"
+            placeholder={mode === "landing" ? `Ask anything ${ent.greeting}…` : "Ask, draft, or compose…"}
+            value={value}
+            onChange={e => setValue(e.target.value)}
+            onKeyDown={handleKey}
+            autoFocus={mode === "landing"}
+          />
+          <button
+            className="fa-composer-send"
+            disabled={!value || !value.trim()}
+            onClick={() => value && value.trim() && onSubmit(value.trim())}
+            aria-label="Send"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
         </div>
-        {mode === "landing" && starters && (
-          <div className="fa-prompt-chips">
-            {starters.map((s, i) => (
-              <button key={i} className="fa-prompt-chip" onClick={() => onStarter(s)}>{s}</button>
-            ))}
-          </div>
-        )}
-      </>
+      </div>
     );
   }
 
   // ──────────────────────────────────────────────────────────────
-  // 9. Tool calls strip
+  // 8. Tool calls strip
   // ──────────────────────────────────────────────────────────────
   function ToolCalls({ tools, animateInitial }) {
     const [doneCount, setDoneCount] = useState(animateInitial ? 0 : (tools || []).length);
@@ -1075,36 +834,14 @@
   }
 
   // ──────────────────────────────────────────────────────────────
-  // 10. Room nav
+  // 9. Cmd+K palette (kept — 8 commands)
   // ──────────────────────────────────────────────────────────────
-  function RoomNav({ entity, room, onRoom }) {
-    const rooms = ROOMS[entity] || [];
-    return (
-      <div className="fa-rooms">
-        {rooms.map(r => (
-          <button
-            key={r}
-            className={classNames("fa-room", room === r && "active")}
-            onClick={() => onRoom(r)}
-          >
-            {r}
-          </button>
-        ))}
-      </div>
-    );
-  }
-
-  // ──────────────────────────────────────────────────────────────
-  // 11. Cmd+K palette
-  // ──────────────────────────────────────────────────────────────
-  // Commands are scoped trees: each node has { id, label, children? } or { id, label, run }.
   function makeCommands(onEntity, openReport) {
     return [
       { id: "switch", label: "Switch entity", icon: "↔", children: [
         { id: "to-vcfo", label: "Admin VCFO", run: () => onEntity("vcfo") },
         { id: "to-lp",   label: "Admin V LP", run: () => onEntity("lp") },
         { id: "to-home", label: "Home",       run: () => onEntity("home") },
-        { id: "to-all",  label: "All",        run: () => onEntity("all") },
       ]},
       { id: "newcc", label: "New capital call", icon: "$", children: [
         { id: "cc-admin-v", label: "Admin Ventures V", children: [
@@ -1142,7 +879,7 @@
   }
 
   function CmdK({ open, onClose, onEntity, openReport, entity }) {
-    const [stack, setStack] = useState([]); // array of nodes
+    const [stack, setStack] = useState([]);
     const [query, setQuery] = useState("");
     const [activeIdx, setActiveIdx] = useState(0);
     const inputRef = useRef(null);
@@ -1230,119 +967,91 @@
   }
 
   // ──────────────────────────────────────────────────────────────
-  // 12. Landing view
+  // 10. Browse drawer (right-side slide-in)
   // ──────────────────────────────────────────────────────────────
-  function Landing({ entity, value, setValue, onSubmit, onEntity, pinnedCards, onPin }) {
-    const ent = ENTITY_BY_ID[entity];
-    return (
-      <div className="fa-canvas">
-        <div className="fa-greeting">
-          <h1>Hi Morgan. Want to look at something {ent.greeting}?</h1>
-          <div className="fa-greeting-sub">Type anything, or pick a starter prompt below.</div>
-        </div>
-        <Composer
-          entity={entity}
-          onEntity={onEntity}
-          onSubmit={onSubmit}
-          mode="landing"
-          value={value}
-          setValue={setValue}
-          starters={STARTERS[entity]}
-          onStarter={(s) => { setValue(s); onSubmit(s); }}
-        />
-        <div className="fa-section-h">Pinned</div>
-        <div className="fa-grid">
-          {(pinnedCards || []).map((c, i) => (
-            <CardRender
-              key={c.id || ("p" + i)}
-              card={c}
-              idx={i}
-              suggested={false}
-              pinned={true}
-              onPin={onPin}
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  function BrowseDrawer({ open, entity, onClose, onPickPage }) {
+    const Icon = window.Icon;
+    const sections = useMemo(() => navForEntity(entity), [entity]);
 
-  // ──────────────────────────────────────────────────────────────
-  // 13. Response view (dashboard composition)
-  // ──────────────────────────────────────────────────────────────
-  function ResponseView({ entity, prompt, response, value, setValue, onSubmit, onEntity, onFollowup, onPin, pinnedIds }) {
-    return (
-      <div className="fa-canvas">
-        <Composer
-          entity={entity}
-          onEntity={onEntity}
-          onSubmit={onSubmit}
-          mode="bar"
-          value={value}
-          setValue={setValue}
-        />
-        <div style={{ maxWidth: 920, margin: "8px auto 4px", padding: "0 4px", fontSize: 13, color: "var(--muted)" }}>
-          <span style={{ color: "var(--fg-2)" }}>You asked:</span> {prompt}
-        </div>
-        <ToolCalls tools={response.tools} animateInitial />
-        <div className="fa-answer">{renderAnswerText(response.answer, response.sources)}</div>
-        <div className="fa-grid">
-          {(response.cards || []).map((c, i) => (
-            <CardRender
-              key={c.id || ("c" + i)}
-              card={c}
-              idx={i}
-              suggested
-              pinned={pinnedIds && pinnedIds.has(c.id)}
-              onPin={onPin}
-            />
+    function renderSection(section, key) {
+      return (
+        <div className="fa-drawer-section" key={key}>
+          {section.label && (
+            <div className="fa-drawer-section-label">{section.label}</div>
+          )}
+          {section.items.map(it => (
+            <button
+              key={it.id}
+              className="fa-drawer-item"
+              onClick={() => onPickPage(it.id)}
+            >
+              <span className="fa-drawer-item-icon">
+                {Icon ? <Icon name={it.icon} size={15} /> : <span>•</span>}
+              </span>
+              <span className="fa-drawer-item-label">{it.label}</span>
+            </button>
           ))}
         </div>
-        <div className="fa-followup-chips">
-          {(response.followups || []).map((f, i) => (
-            <button key={i} className="fa-followup-chip" onClick={() => onFollowup(f)}>{f}</button>
-          ))}
-        </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  // ──────────────────────────────────────────────────────────────
-  // 14. Room view (stubbed)
-  // ──────────────────────────────────────────────────────────────
-  function RoomView({ entity, room, onSubmit, value, setValue, onEntity, pinnedCards, onPin }) {
-    const wired = (WIRED_ROOMS[entity] || new Set()).has(room);
     return (
-      <div className="fa-canvas">
-        <Composer
-          entity={entity}
-          onEntity={onEntity}
-          onSubmit={onSubmit}
-          mode="bar"
-          value={value}
-          setValue={setValue}
-        />
-        {wired ? (
-          <>
-            <div className="fa-section-h">{room}</div>
-            <div className="fa-grid">
-              {(pinnedCards || []).map((c, i) => (
-                <CardRender key={c.id || ("r" + i)} card={c} idx={i} pinned={true} onPin={onPin} />
-              ))}
+      <>
+        {open && <div className="fa-drawer-scrim" onClick={onClose} />}
+        <aside className={classNames("fa-browse-drawer", open && "open")} data-entity={entity} aria-hidden={!open}>
+          <div className="fa-drawer-head">
+            <div className="fa-drawer-title">
+              <span className="fa-drawer-title-dot" />
+              Browse · {ENTITY_BY_ID[entity].label}
             </div>
-          </>
-        ) : (
-          <div className="fa-room-stub">
-            <h2><span className="fa-room-stub-pulse" />AI is composing this room…</h2>
-            <p>{room} for {ENTITY_BY_ID[entity].label} isn't wired in this preview. Ask a question above to compose it on the fly.</p>
+            <button className="fa-drawer-close" onClick={onClose} aria-label="Close">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
           </div>
-        )}
+          <div className="fa-drawer-scroll">
+            {(sections || []).map((sec, i) => renderSection(sec, i))}
+          </div>
+        </aside>
+      </>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 11. Page overlay (full-viewport, slide-up)
+  // ──────────────────────────────────────────────────────────────
+  function PageOverlay({ pageId, entity, pageLabel, onClose }) {
+    useEffect(() => {
+      function onKey(e) { if (e.key === "Escape") onClose(); }
+      window.addEventListener("keydown", onKey);
+      return () => window.removeEventListener("keydown", onKey);
+    }, [onClose]);
+    if (!pageId) return null;
+    return (
+      <div className="fa-page-overlay" data-entity={entity}>
+        <div className="fa-page-overlay-scrim" onClick={onClose} />
+        <div className="fa-page-overlay-card">
+          <div className="fa-page-overlay-head">
+            <div className="fa-page-overlay-crumbs">
+              <span>Browse</span>
+              <span className="fa-bc-sep">›</span>
+              <span>{ENTITY_BY_ID[entity].label}</span>
+              <span className="fa-bc-sep">›</span>
+              <span className="fa-bc-current">{pageLabel}</span>
+            </div>
+            <button className="fa-page-overlay-close" onClick={onClose} aria-label="Close">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <div className="fa-page-overlay-body">
+            <PageHost pageId={pageId} />
+          </div>
+        </div>
       </div>
     );
   }
 
   // ──────────────────────────────────────────────────────────────
-  // 15. Conversational report (Q4 LP letter, Perplexity Pages model)
+  // 12. Inline report panel (folded into turn)
   // ──────────────────────────────────────────────────────────────
   const REPORT_BLOCKS = [
     {
@@ -1388,16 +1097,10 @@
     },
   ];
 
-  function ReportView({ entity, onBackHome }) {
+  function ReportInlinePanel({ entity }) {
     const [pending, setPending] = useState({ block: "summary", visible: true });
     return (
-      <div className="fa-canvas">
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
-          <button className="fa-cmdk-btn" onClick={onBackHome}><span>← Back</span></button>
-          <div style={{ fontSize: 13, color: "var(--muted)" }}>
-            Conversational draft · <span style={{ color: "var(--fg-2)" }}>Admin Ventures V — Q4 2025 LP Letter</span>
-          </div>
-        </div>
+      <div className="fa-report-inline" data-entity={entity}>
         {pending.visible && (
           <div className="fa-accept-strip">
             <span className="fa-accept-dot" />
@@ -1430,7 +1133,7 @@
               <div className="fa-report-msg-meta">1 block updated · 1 source</div>
             </div>
           </div>
-          <div className="fa-report-doc" data-entity={entity}>
+          <div className="fa-report-doc">
             <div className="fa-report-header">
               <div className="fa-report-h2">Quarterly Report · Q4 2025</div>
               <div className="fa-report-h1">Admin Ventures V — Limited Partners Update</div>
@@ -1464,28 +1167,77 @@
   }
 
   // ──────────────────────────────────────────────────────────────
-  // 16. App root
+  // 13. Conversation turn
+  // ──────────────────────────────────────────────────────────────
+  function FollowupChips({ chips, onPick }) {
+    if (!chips || !chips.length) return null;
+    return (
+      <div className="fa-followup-chips">
+        {chips.map((f, i) => (
+          <button key={i} className="fa-followup-chip" onClick={() => onPick(f)}>{f}</button>
+        ))}
+      </div>
+    );
+  }
+
+  function ConversationTurn({ turn, entity, onFollowup, isLatest }) {
+    return (
+      <article className="fa-turn" data-turn-id={turn.id}>
+        <div className="fa-turn-user">
+          <span className="fa-turn-user-prefix">You</span>
+          <span className="fa-turn-user-text">{turn.prompt}</span>
+        </div>
+        <div className="fa-turn-ai">
+          <ToolCalls tools={turn.tools} animateInitial={isLatest} />
+          {turn.answer && (
+            <p className="fa-turn-answer">{renderAnswerText(turn.answer, turn.sources)}</p>
+          )}
+          {turn.kind === "report" ? (
+            <ReportInlinePanel entity={entity} />
+          ) : (
+            turn.cards && turn.cards.length > 0 && (
+              <div className="fa-grid">
+                {turn.cards.map((c, i) => (
+                  <CardRender
+                    key={c.id || ("c" + i)}
+                    card={c}
+                    idx={i}
+                    suggested
+                  />
+                ))}
+              </div>
+            )
+          )}
+          <FollowupChips chips={turn.followups} onPick={onFollowup} />
+        </div>
+      </article>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 14. App root
   // ──────────────────────────────────────────────────────────────
   function App() {
     const [entity, setEntity] = useState("vcfo");
-    const [route, setRoute] = useState({ view: "landing" });
+    const [turns, setTurns] = useState([]);             // [{id, prompt, answer, tools, cards, followups, sources, kind}]
     const [value, setValue] = useState("");
     const [cmdkOpen, setCmdkOpen] = useState(false);
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+    const [browseOpen, setBrowseOpen] = useState(false);
+    const [overlayPageId, setOverlayPageId] = useState(null);
     const [theme, setTheme] = useState(() => {
       try { return document.documentElement.getAttribute("data-theme") || "dark"; }
       catch (e) { return "dark"; }
     });
+    const threadEndRef = useRef(null);
 
-    const [pinnedByEntity, setPinnedByEntity] = useState(() => {
-      const out = {};
-      Object.keys(PINNED_SEED).forEach(k => out[k] = PINNED_SEED[k].slice());
-      return out;
-    });
-
-    function setPageRoute(pageId) {
-      setRoute({ view: "page", pageId });
-    }
+    // Auto-scroll thread on new turn
+    useEffect(() => {
+      if (threadEndRef.current && turns.length > 0) {
+        try {
+          threadEndRef.current.scrollIntoView({ block: "end", behavior: "smooth" });
+        } catch (e) {}
+      }
+    }, [turns.length]);
 
     // Keyboard shortcuts
     useEffect(() => {
@@ -1499,15 +1251,14 @@
         if (isMod && e.key === "1") { e.preventDefault(); setEntity("vcfo"); }
         if (isMod && e.key === "2") { e.preventDefault(); setEntity("lp"); }
         if (isMod && e.key === "3") { e.preventDefault(); setEntity("home"); }
-        if (isMod && e.key === "4") { e.preventDefault(); setEntity("all"); }
       }
       window.addEventListener("keydown", onKey);
       return () => window.removeEventListener("keydown", onKey);
     }, []);
 
-    // Reset to landing when entity changes
+    // Reset thread when entity changes
     useEffect(() => {
-      setRoute({ view: "landing" });
+      setTurns([]);
       setValue("");
     }, [entity]);
 
@@ -1523,7 +1274,6 @@
     function findResponse(promptText) {
       const bank = RESPONSES[entity] || {};
       if (bank[promptText]) return bank[promptText];
-      // fuzzy: case-insensitive contains by starter
       const keys = Object.keys(bank);
       const lc = promptText.toLowerCase();
       const k = keys.find(k => k.toLowerCase() === lc) ||
@@ -1531,59 +1281,61 @@
       return k ? bank[k] : null;
     }
 
+    function isReportPrompt(prompt) {
+      return entity === "vcfo" && /generate|draft/i.test(prompt) && /q\d|quarter|lp letter|report|lp update/i.test(prompt);
+    }
+
     function submitPrompt(prompt) {
       const resp = findResponse(prompt);
+      const id = "t-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+      const kind = isReportPrompt(prompt) ? "report" : "answer";
       if (resp) {
-        // If user asked for a report-style task, route to ReportView
-        if (/q\d|quarter|lp letter|report/i.test(prompt) && entity === "vcfo" && /generate|draft/i.test(prompt)) {
-          setRoute({ view: "report", prompt, response: resp });
-          setValue("");
-          return;
-        }
-        setRoute({ view: "response", prompt, response: resp });
-        setValue("");
-        return;
+        setTurns(prev => prev.concat([{
+          id, prompt, kind,
+          answer: resp.answer,
+          tools: resp.tools,
+          cards: resp.cards,
+          followups: resp.followups,
+          sources: resp.sources,
+        }]));
+      } else {
+        // Fallback synthesized response
+        setTurns(prev => prev.concat([{
+          id, prompt, kind,
+          answer: `Working on "${prompt}" against ${ENTITY_BY_ID[entity].label}. I don't have a canned answer for this exact prompt yet, but here's a starting frame [1].`,
+          tools: ["Parsing your ask", "Searching the workspace", "Composing a placeholder"],
+          cards: [
+            { id: "sn-1-" + id, type: "insight", size: "lg", title: "Placeholder", body: "This is a v1 demo; the live system would compose 3–6 cards here using the same response shape." },
+            { id: "sn-2-" + id, type: "action", size: "md", label: "Try a starter prompt", icon: "play", hint: "Below the composer" },
+          ],
+          followups: STARTERS[entity].slice(0, 3),
+          sources: { 1: "Source: Flow AI canned fallback" },
+        }]));
       }
-      // Fallback: synthesize a thin response
-      const synth = {
-        answer: `Working on "${prompt}" against ${ENTITY_BY_ID[entity].label}. I don't have a canned answer for this exact prompt yet, but here's a starting frame [1].`,
-        tools: ["Parsing your ask", "Searching the workspace", "Composing a placeholder"],
-        cards: [
-          { id: "sn-1", type: "insight", size: "lg", title: "Placeholder", body: "This is a v1 demo; the live system would compose 3–6 cards here using the same response shape." },
-          { id: "sn-2", type: "action", size: "md", label: "Try a starter prompt", icon: "play", hint: "Bottom of landing" },
-        ],
-        followups: STARTERS[entity].slice(0, 3),
-        sources: { 1: "Source: Flow AI canned fallback" },
-      };
-      setRoute({ view: "response", prompt, response: synth });
       setValue("");
     }
 
-    function pinCard(card) {
-      setPinnedByEntity(prev => {
-        const list = prev[entity] || [];
-        const exists = list.some(c => c.id === card.id);
-        const next = exists
-          ? list.filter(c => c.id !== card.id)
-          : list.concat([card]);
-        return { ...prev, [entity]: next };
-      });
+    function openReportFromCmdK() {
+      // Inject a synthetic report turn (mirrors the Q4 LP update flow)
+      const id = "t-report-" + Date.now();
+      const resp = (RESPONSES.vcfo || {})["Generate the Q4 LP update"] || {};
+      if (entity !== "vcfo") setEntity("vcfo");
+      setTurns(prev => prev.concat([{
+        id,
+        prompt: "Generate the Q4 LP update",
+        kind: "report",
+        answer: resp.answer,
+        tools: resp.tools,
+        cards: resp.cards,
+        followups: resp.followups,
+        sources: resp.sources,
+      }]));
+      setValue("");
     }
 
-    const pinnedIds = useMemo(() => {
-      return new Set((pinnedByEntity[entity] || []).map(c => c.id));
-    }, [pinnedByEntity, entity]);
-
-    function openReport() {
-      setRoute({ view: "report", prompt: "Generate the Q4 LP update" });
-    }
-
-    // Look up the friendly label for the current page (for the breadcrumb).
     function pageLabel(pid) {
       if (!pid) return "";
-      const lists = entity === "all"
-        ? ENTITIES.filter(e => e.id !== "all").flatMap(e => navForEntity(e.id) || [])
-        : (navForEntity(entity) || []);
+      const lists = navForEntity(entity) || [];
       for (const sec of lists) {
         for (const it of (sec.items || [])) {
           if (it.id === pid) return it.label;
@@ -1591,6 +1343,14 @@
       }
       return pid;
     }
+
+    function onBrowsePick(pageId) {
+      setBrowseOpen(false);
+      setOverlayPageId(pageId);
+    }
+
+    const mode = turns.length === 0 ? "landing" : "thread";
+    const ent = ENTITY_BY_ID[entity];
 
     return (
       <>
@@ -1600,89 +1360,80 @@
           theme={theme}
         />
         <div className="fa-shell" data-entity={entity}>
-          <FlowSidebar
-            entity={entity}
-            collapsed={sidebarCollapsed}
-            onToggleCollapsed={() => setSidebarCollapsed(v => !v)}
-            activePageId={route.view === "page" ? route.pageId : null}
-            onPickPage={setPageRoute}
-          />
           <div className="fa-main">
             <TopBar
               entity={entity}
-              onEntity={setEntity}
               onOpenCmdk={() => setCmdkOpen(true)}
               onToggleTheme={toggleTheme}
               theme={theme}
+              onOpenBrowse={() => setBrowseOpen(true)}
             />
-            {route.view === "page" && (
-              <>
-                <div className="fa-breadcrumb">
-                  <span>Browse</span>
-                  <span className="fa-bc-sep">·</span>
-                  <span>{ENTITY_BY_ID[entity].label}</span>
-                  <span className="fa-bc-sep">·</span>
-                  <span className="fa-bc-current">{pageLabel(route.pageId)}</span>
-                  <button onClick={() => setRoute({ view: "landing" })} title="Back to AI">← Back to AI</button>
+            <div className={classNames("fa-stage", "fa-stage-" + mode)}>
+              {mode === "landing" ? (
+                <div className="fa-landing">
+                  <div className="fa-greeting">
+                    <h1>Hi Morgan. What do you want to look at?</h1>
+                    <div className="fa-greeting-sub">Ask anything {ent.greeting}, or pick a starter below.</div>
+                  </div>
+                  <Composer
+                    entity={entity}
+                    onEntity={setEntity}
+                    onSubmit={submitPrompt}
+                    mode="landing"
+                    value={value}
+                    setValue={setValue}
+                  />
+                  <div className="fa-prompt-chips">
+                    {STARTERS[entity].map((s, i) => (
+                      <button key={i} className="fa-prompt-chip" onClick={() => submitPrompt(s)}>{s}</button>
+                    ))}
+                  </div>
                 </div>
-                <div className="fa-page-host">
-                  <PageHost pageId={route.pageId} />
-                </div>
-              </>
-            )}
-            {route.view !== "landing" && route.view !== "report" && route.view !== "page" && (
-              <RoomNav
-                entity={entity}
-                room={route.view === "room" ? route.room : null}
-                onRoom={(r) => setRoute({ view: "room", room: r })}
-              />
-            )}
-            {route.view === "landing" && (
-              <Landing
-                entity={entity}
-                value={value}
-                setValue={setValue}
-                onSubmit={submitPrompt}
-                onEntity={setEntity}
-                pinnedCards={pinnedByEntity[entity]}
-                onPin={pinCard}
-              />
-            )}
-            {route.view === "response" && (
-              <ResponseView
-                entity={entity}
-                prompt={route.prompt}
-                response={route.response}
-                value={value}
-                setValue={setValue}
-                onSubmit={submitPrompt}
-                onEntity={setEntity}
-                onFollowup={submitPrompt}
-                onPin={pinCard}
-                pinnedIds={pinnedIds}
-              />
-            )}
-            {route.view === "room" && (
-              <RoomView
-                entity={entity}
-                room={route.room}
-                onSubmit={submitPrompt}
-                value={value}
-                setValue={setValue}
-                onEntity={setEntity}
-                pinnedCards={pinnedByEntity[entity]}
-                onPin={pinCard}
-              />
-            )}
-            {route.view === "report" && (
-              <ReportView entity={entity} onBackHome={() => setRoute({ view: "landing" })} />
-            )}
+              ) : (
+                <>
+                  <div className="fa-thread">
+                    {turns.map((turn, i) => (
+                      <ConversationTurn
+                        key={turn.id}
+                        turn={turn}
+                        entity={entity}
+                        onFollowup={submitPrompt}
+                        isLatest={i === turns.length - 1}
+                      />
+                    ))}
+                    <div ref={threadEndRef} />
+                  </div>
+                  <Composer
+                    entity={entity}
+                    onEntity={setEntity}
+                    onSubmit={submitPrompt}
+                    mode="thread"
+                    value={value}
+                    setValue={setValue}
+                  />
+                </>
+              )}
+            </div>
           </div>
+          <BrowseDrawer
+            open={browseOpen}
+            entity={entity}
+            onClose={() => setBrowseOpen(false)}
+            onPickPage={onBrowsePick}
+          />
+          {overlayPageId && (
+            <PageOverlay
+              pageId={overlayPageId}
+              entity={entity}
+              pageLabel={pageLabel(overlayPageId)}
+              onClose={() => setOverlayPageId(null)}
+            />
+          )}
           <CmdK
             open={cmdkOpen}
             onClose={() => setCmdkOpen(false)}
             onEntity={setEntity}
-            openReport={openReport}
+            openReport={openReportFromCmdK}
             entity={entity}
           />
         </div>
@@ -1691,7 +1442,7 @@
   }
 
   // ──────────────────────────────────────────────────────────────
-  // 17. Mount
+  // 15. Mount
   // ──────────────────────────────────────────────────────────────
   const rootEl = document.getElementById("root");
   if (rootEl) {
