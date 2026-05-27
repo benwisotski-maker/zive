@@ -618,10 +618,18 @@
     ]},
   ];
 
+  // Strip the "home" item from any nav config — AI mode IS home, so
+  // the standalone Home entry in the sidebar is redundant. Sections that
+  // become empty after the filter are dropped too.
+  function stripHomeFromNav(cfg) {
+    return (cfg || [])
+      .map(sec => ({ ...sec, items: (sec.items || []).filter(i => i.id !== "home") }))
+      .filter(sec => sec.items.length > 0);
+  }
   function navForEntity(entity) {
-    if (entity === "vcfo") return window.VCFO_NAV_CFG || [];
-    if (entity === "lp")   return window.LP_NAV_CFG   || [];
-    if (entity === "home") return HOME_NAV_CFG;
+    if (entity === "vcfo") return stripHomeFromNav(window.VCFO_NAV_CFG);
+    if (entity === "lp")   return stripHomeFromNav(window.LP_NAV_CFG);
+    if (entity === "home") return stripHomeFromNav(HOME_NAV_CFG);
     return [];
   }
 
