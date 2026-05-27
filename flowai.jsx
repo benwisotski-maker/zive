@@ -7,12 +7,11 @@
   const { useState, useEffect, useRef, useMemo, useLayoutEffect } = React;
 
   // ──────────────────────────────────────────────────────────────
-  // 1. Entity catalog (3 only — "All" entity dropped)
+  // 1. Entity catalog (2 only — Home dropped; AI mode IS home)
   // ──────────────────────────────────────────────────────────────
   const ENTITIES = [
     { id: "vcfo", label: "Admin VCFO", short: "VCFO", greeting: "managing the fund" },
     { id: "lp",   label: "Admin V LP", short: "LP",   greeting: "as the LP" },
-    { id: "home", label: "Home",       short: "Home", greeting: "across workspaces" },
   ];
   const ENTITY_BY_ID = Object.fromEntries(ENTITIES.map(e => [e.id, e]));
 
@@ -31,12 +30,6 @@
       "Show me my recent capital activity",
       "When is my next distribution?",
       "Summarize my latest tax docs",
-    ],
-    home: [
-      "What needs my attention today?",
-      "Catch me up — what changed since Friday?",
-      "Show my open approvals",
-      "Calendar for the week",
     ],
   };
 
@@ -183,79 +176,6 @@
       },
     },
 
-    home: {
-      "What needs my attention today?": {
-        answer: "4 items: a wire to approve, one LP question waiting, an overdue tax doc, and a calendar conflict at 3pm [1].",
-        tools: ["Scanning inbox + portal", "Ranking by SLA + sender", "Checking calendar"],
-        cards: [
-          { id: "h-tasks", type: "tasks", size: "lg", title: "Today's queue", items: [
-            { text: "Approve wire — Admin V $120K out", due: "By 2pm" },
-            { text: "Reply to Maple Endowment (Q4 follow-up)", due: "Today" },
-            { text: "K-1 for Acorn LLC overdue 2 days", due: "Overdue" },
-            { text: "Conflict: 3pm board call ↔ LP intro", due: "3:00 PM" },
-          ] },
-          { id: "h-kpi", type: "kpiOrb", size: "sm", label: "Inbox unread", value: "12", delta: "3 from LPs" },
-          { id: "h-kpi2", type: "kpiOrb", size: "sm", label: "Approvals", value: "4", delta: "1 aging > 3d" },
-          { id: "h-action", type: "action", size: "sm", label: "Start morning brief", icon: "play", hint: "5 min" },
-        ],
-        followups: ["Approve the wire", "Draft reply to Maple", "Reschedule 3pm"],
-        sources: { 1: "Source: Unified inbox + portal queue" },
-      },
-      "Catch me up — what changed since Friday?": {
-        answer: "Since Friday: 3 new portfolio company updates, NAV moved +0.4% on Admin V, 2 new LP doc views, and one capital call was wired in [1].",
-        tools: ["Diffing activity log Fri → now", "Summarizing by category", "Surfacing material items"],
-        cards: [
-          { id: "catch-insight", type: "insight", size: "lg", title: "Material changes", body: "Plover Robotics signed term sheet (Series B, $14M pre) [2]. Maple Endowment viewed Q4 letter (engagement signal). Admin V cash position +$420K from settled call." },
-          { id: "catch-kpi", type: "kpiOrb", size: "sm", label: "NAV Δ", value: "+0.4%", delta: "Admin V only" },
-          { id: "catch-kpi2", type: "kpiOrb", size: "sm", label: "New updates", value: "3", delta: "Portfolio cos" },
-          { id: "catch-table", type: "table", size: "lg", title: "Activity since Friday", columns: ["When", "Event", "Owner"], rows: [
-            ["Mon 9:02 AM", "Plover Robotics — Series B term sheet", "Investments"],
-            ["Mon 11:14 AM", "Admin V capital call settled (+$420K)", "Operations"],
-            ["Sun 4:42 PM", "Maple Endowment viewed Q4 letter", "IR"],
-            ["Sat 10:00 AM", "Atlas Foundation submitted W-9 update", "Compliance"],
-          ] },
-        ],
-        followups: ["Open the Plover term sheet", "Draft a follow-up to Maple", "Show me prior weeks"],
-        sources: { 1: "Source: Activity stream, Fri 5pm — now", 2: "Source: Portfolio CRM" },
-      },
-      "Show my open approvals": {
-        answer: "7 approvals open. 2 are aging more than 3 days [1].",
-        tools: ["Querying approval queue", "Sorting by aging + amount"],
-        cards: [
-          { id: "ap-table", type: "table", size: "xl", title: "Open approvals", columns: ["Type", "Subject", "Amount", "Age", "Owner"], rows: [
-            ["Wire", "Admin V — JPM 4471 → Vendor #28", "$120,000", "Today", "Operations"],
-            ["Capital call", "Admin V 12% call", "$6.96M", "1 day", "VCFO"],
-            ["Distribution", "Admin IV — partial Acorn", "$86,400", "2 days", "Operations"],
-            ["Side letter", "Cedar Family Office — quarterly opt-in", "—", "4 days", "Legal"],
-            ["Expense", "Audit retainer (KPMG)", "$24,000", "5 days", "Finance"],
-            ["Doc release", "Q4 LP letter to portal", "—", "1 day", "IR"],
-            ["Valuation", "Admin RE II — Q1 memo", "—", "3 days", "Investments"],
-          ], summary: "2 items aging > 3d: Cedar side letter, KPMG retainer." },
-          { id: "ap-kpi", type: "kpiOrb", size: "sm", label: "Open", value: "7", delta: "2 aging" },
-          { id: "ap-kpi2", type: "kpiOrb", size: "sm", label: "$ at stake", value: "$7.18M", delta: "Across 4 items" },
-        ],
-        followups: ["Approve all under $50K", "Push aging items to the top", "Set up a daily approval block"],
-        sources: { 1: "Source: Approvals queue" },
-      },
-      "Calendar for the week": {
-        answer: "12 meetings, 3 hard-blocked focus windows, and one travel day on Thursday [1].",
-        tools: ["Pulling calendar", "Detecting focus blocks + conflicts"],
-        cards: [
-          { id: "cal-tasks", type: "tasks", size: "lg", title: "This week", items: [
-            { text: "Mon — Admin V capital call review", due: "10:00 AM" },
-            { text: "Tue — LP committee (Real Estate II)", due: "2:00 PM" },
-            { text: "Wed — Q4 letter sign-off", due: "11:00 AM" },
-            { text: "Thu — Travel: SFO → JFK (LP roadshow)", due: "All day" },
-            { text: "Fri — Operations weekly", due: "9:30 AM" },
-          ] },
-          { id: "cal-kpi", type: "kpiOrb", size: "sm", label: "Meetings", value: "12", delta: "Median 30 min" },
-          { id: "cal-kpi2", type: "kpiOrb", size: "sm", label: "Focus blocks", value: "3", delta: "6 hours total" },
-          { id: "cal-insight", type: "insight", size: "md", title: "AI note", body: "Thursday's travel removes most of your async response window — recommend drafting LP replies on Wednesday." },
-        ],
-        followups: ["Reschedule the 3pm conflict", "Add a Friday focus block", "Send me the LP roadshow brief"],
-        sources: { 1: "Source: Google Calendar + travel itinerary" },
-      },
-    },
   };
 
   // ──────────────────────────────────────────────────────────────
@@ -574,54 +494,15 @@
   // ──────────────────────────────────────────────────────────────
   // 5b. Entity → hue base (for beams)
   // ──────────────────────────────────────────────────────────────
-  const ENTITY_HUE_BASE = { vcfo: 190, lp: 260, home: 90 };
-  const ENTITY_DOT = { vcfo: "#38BDF8", lp: "#7C5CFF", home: "#84CC16" };
+  const ENTITY_HUE_BASE = { vcfo: 190, lp: 260 };
+  const ENTITY_DOT = { vcfo: "#38BDF8", lp: "#7C5CFF" };
 
   // ──────────────────────────────────────────────────────────────
   // 5c. Flow nav configs (for left icon rail)
   // ──────────────────────────────────────────────────────────────
-  const HOME_NAV_CFG = [
-    { items: [
-      { id: "home",        label: "Home",        icon: "home" },
-      { id: "zive-ai",     label: "Zive AI",     icon: "sparkle" },
-      { id: "dashboard",   label: "Dashboard",   icon: "dashboard" },
-      { id: "tasks",       label: "Tasks",       icon: "tasks" },
-      { id: "bluecheck",   label: "BlueCheck",   icon: "shieldCheck" },
-      { id: "activity",    label: "Activity",    icon: "activity" },
-      { id: "documents",   label: "Documents",   icon: "folder" },
-      { id: "settings",    label: "Settings",    icon: "settings" },
-    ]},
-    { label: "Fund", items: [
-      { id: "portfolio",     label: "Portfolio",     icon: "pie" },
-      { id: "investors",     label: "Investors",     icon: "investor" },
-      { id: "capital-calls", label: "Capital Calls", icon: "capitalCall" },
-      { id: "distributions", label: "Distributions", icon: "distribution" },
-      { id: "startups",      label: "Startups",      icon: "briefcase" },
-    ]},
-    { label: "AI", items: [
-      { id: "ai-upload",  label: "AI Upload",       icon: "aiUpload" },
-      { id: "agents",     label: "Agents",          icon: "settings" },
-      { id: "doc-studio", label: "Document Studio", icon: "docStudio" },
-      { id: "mcp",        label: "MCP",             icon: "mcp" },
-    ]},
-    { label: "Accounting", items: [
-      { id: "accounting", label: "Accounting", icon: "accounting" },
-      { id: "reports",    label: "Reports",    icon: "report" },
-      { id: "quarterly",  label: "Quarterly",  icon: "quarterly" },
-      { id: "audit",      label: "Audit",      icon: "audit" },
-    ]},
-    { label: "Management", items: [
-      { id: "lp-interest",   label: "LP Interest",   icon: "briefcase" },
-      { id: "lp-onboarding", label: "LP Onboarding", icon: "onboard" },
-      { id: "deal-room",     label: "Deal Room",     icon: "dealRoom" },
-      { id: "users",         label: "Users",         icon: "users" },
-    ]},
-  ];
-
   function navForEntity(entity) {
     if (entity === "vcfo") return window.VCFO_NAV_CFG || [];
     if (entity === "lp")   return window.LP_NAV_CFG   || [];
-    if (entity === "home") return HOME_NAV_CFG;
     return [];
   }
 
@@ -704,7 +585,6 @@
     const STRIP = [
       { id: "vcfo", label: "VCFO" },
       { id: "lp",   label: "LP" },
-      { id: "home", label: "Home" },
     ];
     return (
       <div className="fa-topbar" data-entity={entity}>
@@ -851,7 +731,6 @@
       { id: "switch", label: "Switch entity", icon: "↔", children: [
         { id: "to-vcfo", label: "Admin VCFO", run: () => onEntity("vcfo") },
         { id: "to-lp",   label: "Admin V LP", run: () => onEntity("lp") },
-        { id: "to-home", label: "Home",       run: () => onEntity("home") },
       ]},
       { id: "newcc", label: "New capital call", icon: "$", children: [
         { id: "cc-admin-v", label: "Admin Ventures V", children: [
@@ -1225,11 +1104,16 @@
   const ENTITY_DEFAULT_PAGE = {
     vcfo: "vcfo-dashboards",
     lp:   "lp-overview",
-    home: "dashboard",
   };
+  const VALID_ENTITY = new Set(["vcfo", "lp"]);
 
   function App() {
-    const [entity, setEntity] = useState("vcfo");
+    const [entity, setEntity] = useState((() => {
+      try {
+        const stored = localStorage.getItem("flowai.entity");
+        return VALID_ENTITY.has(stored) ? stored : "vcfo";
+      } catch (e) { return "vcfo"; }
+    })());
     const [turns, setTurns] = useState([]);             // [{id, prompt, answer, tools, cards, followups, sources, kind}]
     const [value, setValue] = useState("");
     const [cmdkOpen, setCmdkOpen] = useState(false);
@@ -1250,8 +1134,10 @@
     // Single entity-switch handler. Wired to: topbar pills, composer chip,
     // Cmd+1/2/3, and the Cmd+K palette's "Switch entity" submenu.
     function switchEntity(newEntity) {
+      if (!VALID_ENTITY.has(newEntity)) return;
       const prev = entityRef.current;
       setEntity(newEntity);
+      try { localStorage.setItem("flowai.entity", newEntity); } catch (e) {}
       if ((viewModeRef.current === "split" || viewModeRef.current === "full") && newEntity !== prev) {
         setPageId(ENTITY_DEFAULT_PAGE[newEntity] || null);
       }
@@ -1277,7 +1163,6 @@
         }
         if (isMod && e.key === "1") { e.preventDefault(); switchEntity("vcfo"); return; }
         if (isMod && e.key === "2") { e.preventDefault(); switchEntity("lp"); return; }
-        if (isMod && e.key === "3") { e.preventDefault(); switchEntity("home"); return; }
         if (e.key === "Escape") {
           if (viewModeRef.current === "split" || viewModeRef.current === "full") {
             setViewMode("ai");
