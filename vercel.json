@@ -1,5 +1,7 @@
 {
   "rewrites": [
-    { "source": "/", "destination": "/Zive-expanded.html" }
+    { "source": "/", "destination": "/Zive-expanded.html" },
+    { "source": "/flow", "destination": "/Zive.html" },
+    { "source": "/flow/", "destination": "/Zive.html" }
   ]
 }
