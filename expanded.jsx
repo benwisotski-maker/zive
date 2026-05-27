@@ -539,6 +539,10 @@
     );
   }
 
+  // Render order: all dark sections first, then all light. Stable sort keeps
+  // the within-theme manifest order intact.
+  SECTIONS.sort((a, b) => (a.theme === "dark" ? 0 : 1) - (b.theme === "dark" ? 0 : 1));
+
   window.__ZEXP_SECTIONS_COUNT = SECTIONS.length;
   ReactDOM.createRoot(document.getElementById("root")).render(<ExpandedApp />);
 })();
