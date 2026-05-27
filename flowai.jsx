@@ -1382,7 +1382,11 @@
       setViewMode("split");
     }
 
-    const mode = turns.length === 0 ? "landing" : "thread";
+    // Landing mode is reserved for pure AI mode with no turns. In split/full
+    // the thread column is narrow — never show the big centered landing
+    // composer there (it overflows). Use the small thread-style composer
+    // instead, and surface starter chips as an empty-state above it.
+    const mode = (turns.length === 0 && viewMode === "ai") ? "landing" : "thread";
     const ent = ENTITY_BY_ID[entity];
 
     // The conversation panel (thread + composer or landing) — used in both
@@ -1414,6 +1418,16 @@
       return (
         <>
           <div className="fa-thread">
+            {turns.length === 0 && (
+              <div className="fa-thread-empty">
+                <div className="fa-thread-empty-label">Ask anything {ent.greeting}, or pick a starter:</div>
+                <div className="fa-prompt-chips fa-prompt-chips-compact">
+                  {STARTERS[entity].map((s, i) => (
+                    <button key={i} className="fa-prompt-chip" onClick={() => submitPrompt(s)}>{s}</button>
+                  ))}
+                </div>
+              </div>
+            )}
             {turns.map((turn, i) => (
               <ConversationTurn
                 key={turn.id}
@@ -1466,9 +1480,6 @@
                 <ConversationPanel />
               ) : (
                 <>
-                  <div className="fa-thread-col">
-                    <ConversationPanel />
-                  </div>
                   <PagePanel
                     pageId={pageId}
                     entity={entity}
@@ -1476,6 +1487,9 @@
                     viewMode={viewMode}
                     onSetViewMode={setViewMode}
                   />
+                  <div className="fa-thread-col">
+                    <ConversationPanel />
+                  </div>
                 </>
               )}
             </div>
