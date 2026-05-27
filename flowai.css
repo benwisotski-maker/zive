@@ -40,10 +40,14 @@
 }
 
 /* ─── Shell ─── */
+/* Lock the page itself — only specific scroll containers (thread, page-body)
+   are allowed to scroll. The page never scrolls as a whole. */
+html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 .fa-shell {
   display: flex;
   flex-direction: row;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background: transparent;
   color: var(--fg);
   position: relative;
@@ -53,9 +57,12 @@
 .fa-main {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   padding-left: 56px;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* ─── Beams background ─── */
@@ -206,25 +213,49 @@
 .fa-stage {
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 52px);
+  height: calc(100vh - 52px);
+  min-height: 0;
   max-width: 880px;
   margin: 0 auto;
-  padding: 64px 24px 120px;
+  padding: 0 24px;
   width: 100%;
   position: relative;
+  overflow: hidden;
   transition: max-width 240ms ease, padding 240ms ease;
 }
-.fa-stage-landing { justify-content: flex-start; padding-top: 16vh; }
-.fa-stage-thread { padding-top: 40px; padding-bottom: 140px; }
+.fa-stage-landing { justify-content: center; padding-top: 0; }
+.fa-stage-thread { padding-top: 0; padding-bottom: 0; }
+
+/* AI mode: thread scrolls inside the stage; composer pinned at bottom. */
+.fa-stage[data-view-mode="ai"] { max-width: 880px; }
+.fa-stage[data-view-mode="ai"] .fa-thread {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding-top: 40px;
+  padding-bottom: 12px;
+}
+.fa-stage[data-view-mode="ai"] .fa-composer-stick {
+  position: static;
+  bottom: auto;
+  margin: 0 0 24px;
+  flex-shrink: 0;
+}
+.fa-stage[data-view-mode="ai"] .fa-landing {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  justify-content: center;
+  padding: 6vh 0;
+}
 
 /* Split / full view modes — stage spans the full canvas */
-.fa-stage[data-view-mode="ai"] { max-width: 880px; }
 .fa-stage[data-view-mode="split"],
 .fa-stage[data-view-mode="full"] {
   max-width: none;
   flex-direction: row;
   gap: 16px;
-  padding: 24px 24px 24px;
+  padding: 16px 16px 16px;
   align-items: stretch;
 }
 
@@ -241,20 +272,31 @@
   max-width: 520px;
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 84px);
-  max-height: calc(100vh - 84px);
-  overflow-y: auto;
-  overflow-x: hidden;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;             /* outer column never scrolls */
   padding-left: 8px;
   transition: flex-basis 240ms ease, opacity 240ms ease;
-  min-width: 0;  /* allows flex children to shrink properly inside thread-col */
+}
+.fa-thread-col > .fa-thread {
+  flex: 1;
+  overflow-y: auto;             /* thread itself scrolls */
+  overflow-x: hidden;
+  min-height: 0;
 }
 .fa-thread-col > * { min-width: 0; max-width: 100%; }
 .fa-stage[data-view-mode="full"] .fa-thread-col {
   display: none;
 }
 .fa-thread-col > .fa-thread { padding-bottom: 12px; }
-.fa-thread-col > .fa-composer-stick { bottom: 0; }
+/* In split mode the composer is a static flex child at the bottom of
+   thread-col (the thread above it scrolls). */
+.fa-thread-col > .fa-composer-stick {
+  position: static;
+  bottom: auto;
+  margin: 8px 0 12px;
+  flex-shrink: 0;
+}
 
 /* Empty-state intro inside thread column when there are no turns yet
    (split mode, fresh load). Compact, doesn't push the composer off-screen. */
@@ -293,8 +335,8 @@
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid rgba(255,255,255,0.10);
   box-shadow: 0 8px 28px rgba(0,0,0,0.30);
-  min-height: calc(100vh - 84px);
-  max-height: calc(100vh - 84px);
+  height: 100%;
+  min-height: 0;
   transition: opacity 240ms ease;
 }
 .fa-stage[data-view-mode="ai"] .fa-page-col { display: none; }
