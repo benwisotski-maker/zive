@@ -11,6 +11,12 @@
   --entity-tint: rgba(124, 92, 255, 0.14);
   --entity-glow: rgba(124, 92, 255, 0.35);
 }
+[data-entity="home"] {
+  --entity-accent: #84CC16;
+  --entity-tint: rgba(132, 204, 22, 0.14);
+  --entity-glow: rgba(132, 204, 22, 0.35);
+}
+
 /* In light theme, swap VCFO accent to the brand sky-600 */
 :root[data-theme="light"] [data-entity="vcfo"] {
   --entity-accent: #0084D1;
@@ -148,11 +154,13 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 }
 .fa-entity-pill[data-entity="vcfo"].active { box-shadow: 0 4px 24px -4px rgba(56, 189, 248, 0.55); }
 .fa-entity-pill[data-entity="lp"].active   { box-shadow: 0 4px 24px -4px rgba(167, 139, 250, 0.55); }
+.fa-entity-pill[data-entity="home"].active { box-shadow: 0 4px 24px -4px rgba(163, 230, 53, 0.55); }
 .fa-entity-dot {
   display: inline-block; width: 8px; height: 8px; border-radius: 50%;
 }
 .fa-entity-pill[data-entity="vcfo"] .fa-entity-dot { background: hsl(196, 90%, 60%); }
 .fa-entity-pill[data-entity="lp"] .fa-entity-dot   { background: hsl(264, 85%, 70%); }
+.fa-entity-pill[data-entity="home"] .fa-entity-dot { background: hsl(85, 75%, 55%); }
 
 [data-theme="light"] .fa-entity-pill {
   background: rgba(0, 0, 0, 0.04);
