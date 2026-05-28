@@ -578,59 +578,178 @@
   const ENTITY_DOT = { vcfo: "#38BDF8", lp: "#7C5CFF", home: "#84CC16" };
 
   // ──────────────────────────────────────────────────────────────
-  // 5c. Flow nav configs (for left icon rail)
+  // 5c. Flow nav configs (mode-aware: analyze / archive / artifacts)
   // ──────────────────────────────────────────────────────────────
-  const HOME_NAV_CFG = [
-    { items: [
-      { id: "home",        label: "Home",        icon: "home" },
-      { id: "zive-ai",     label: "Zive AI",     icon: "sparkle" },
-      { id: "dashboard",   label: "Dashboard",   icon: "dashboard" },
-      { id: "tasks",       label: "Tasks",       icon: "tasks" },
-      { id: "bluecheck",   label: "BlueCheck",   icon: "shieldCheck" },
-      { id: "activity",    label: "Activity",    icon: "activity" },
-      { id: "documents",   label: "Documents",   icon: "folder" },
-      { id: "settings",    label: "Settings",    icon: "settings" },
-    ]},
-    { label: "Fund", items: [
-      { id: "portfolio",     label: "Portfolio",     icon: "pie" },
-      { id: "investors",     label: "Investors",     icon: "investor" },
-      { id: "capital-calls", label: "Capital Calls", icon: "capitalCall" },
-      { id: "distributions", label: "Distributions", icon: "distribution" },
-      { id: "startups",      label: "Startups",      icon: "briefcase" },
-    ]},
-    { label: "AI", items: [
-      { id: "ai-upload",  label: "AI Upload",       icon: "aiUpload" },
-      { id: "agents",     label: "Agents",          icon: "settings" },
-      { id: "doc-studio", label: "Document Studio", icon: "docStudio" },
-      { id: "mcp",        label: "MCP",             icon: "mcp" },
-    ]},
-    { label: "Accounting", items: [
-      { id: "accounting", label: "Accounting", icon: "accounting" },
-      { id: "reports",    label: "Reports",    icon: "report" },
-      { id: "quarterly",  label: "Quarterly",  icon: "quarterly" },
-      { id: "audit",      label: "Audit",      icon: "audit" },
-    ]},
-    { label: "Management", items: [
-      { id: "lp-interest",   label: "LP Interest",   icon: "briefcase" },
-      { id: "lp-onboarding", label: "LP Onboarding", icon: "onboard" },
-      { id: "deal-room",     label: "Deal Room",     icon: "dealRoom" },
-      { id: "users",         label: "Users",         icon: "users" },
-    ]},
+  const RAIL_MODES = [
+    { id: "analyze",   label: "Analyze",   icon: "trendUp" },
+    { id: "archive",   label: "Archive",   icon: "folder" },
+    { id: "artifacts", label: "Artifacts", icon: "report" },
   ];
 
-  // Strip the "home" item from any nav config — AI mode IS home, so
-  // the standalone Home entry in the sidebar is redundant. Sections that
-  // become empty after the filter are dropped too.
-  function stripHomeFromNav(cfg) {
-    return (cfg || [])
-      .map(sec => ({ ...sec, items: (sec.items || []).filter(i => i.id !== "home") }))
-      .filter(sec => sec.items.length > 0);
+  const MODE_NAV = {
+    vcfo: {
+      analyze: [
+        { items: [
+          { id: "vcfo-dashboards",   label: "Dashboards",  icon: "dashboard" },
+          { id: "vcfo-investments",  label: "Investments", icon: "trendUp" },
+          { id: "vcfo-funds",        label: "Funds",       icon: "pie" },
+          { id: "vcfo-accounting",   label: "Accounting",  icon: "accounting" },
+          { id: "vcfo-lp-portal",    label: "Investors",   icon: "investor" },
+          { id: "bluecheck",         label: "Insights",    icon: "shieldCheck" },
+        ]},
+      ],
+      archive: [
+        { items: [
+          { id: "activity",              label: "Activity",       icon: "activity" },
+          { id: "vcfo-documents",        label: "Documents",      icon: "folder" },
+          { id: "vcfo-financing-docs",   label: "Financing docs", icon: "vault" },
+          { id: "tasks",                 label: "Tasks",          icon: "tasks" },
+          { id: "lp-onboarding",         label: "Onboarding",     icon: "onboard" },
+        ]},
+      ],
+      artifacts: [
+        { items: [
+          { id: "vcfo-reporting",  label: "Reports",           icon: "report" },
+          { id: "quarterly",       label: "Quarterly letters", icon: "quarterly" },
+          { id: "audit",           label: "Audit",             icon: "audit" },
+          { id: "vcfo-uda",        label: "AI analyses",       icon: "sparkle" },
+        ]},
+      ],
+    },
+    lp: {
+      analyze: [
+        { items: [
+          { id: "lp-overview", label: "Overview", icon: "dashboard" },
+        ]},
+      ],
+      archive: [
+        { items: [
+          { id: "activity", label: "Activity", icon: "activity" },
+        ]},
+      ],
+      artifacts: [
+        { items: [
+          { id: "lp-wire", label: "Wire instructions", icon: "vault" },
+        ]},
+      ],
+    },
+    home: {
+      analyze: [
+        { items: [
+          { id: "dashboard",   label: "Dashboard",  icon: "dashboard" },
+          { id: "tasks",       label: "Tasks",      icon: "tasks" },
+          { id: "lp-interest", label: "Pipeline",   icon: "briefcase" },
+          { id: "portfolio",   label: "Portfolio",  icon: "pie" },
+          { id: "investors",   label: "Investors",  icon: "investor" },
+        ]},
+      ],
+      archive: [
+        { items: [
+          { id: "activity",      label: "Activity",      icon: "activity" },
+          { id: "documents",     label: "Documents",     icon: "folder" },
+          { id: "capital-calls", label: "Capital calls", icon: "capitalCall" },
+          { id: "distributions", label: "Distributions", icon: "distribution" },
+        ]},
+      ],
+      artifacts: [
+        { items: [
+          { id: "reports",   label: "Reports",   icon: "report" },
+          { id: "quarterly", label: "Quarterly", icon: "quarterly" },
+          { id: "audit",     label: "Audit",     icon: "audit" },
+          { id: "bluecheck", label: "BlueCheck", icon: "shieldCheck" },
+        ]},
+      ],
+    },
+  };
+
+  function getModeNavForEntity(entity, mode) {
+    const byEntity = MODE_NAV[entity];
+    if (!byEntity) return [];
+    return byEntity[mode] || [];
   }
-  function navForEntity(entity) {
-    if (entity === "vcfo") return stripHomeFromNav(window.VCFO_NAV_CFG);
-    if (entity === "lp")   return stripHomeFromNav(window.LP_NAV_CFG);
-    if (entity === "home") return stripHomeFromNav(HOME_NAV_CFG);
-    return [];
+
+  // Reverse lookup: find which mode contains a given pageId for an entity.
+  // Returns the first matching mode id, or null if not found.
+  function findModeForPage(entity, pageId) {
+    const byEntity = MODE_NAV[entity];
+    if (!byEntity || !pageId) return null;
+    for (const modeId of Object.keys(byEntity)) {
+      const sections = byEntity[modeId] || [];
+      for (const sec of sections) {
+        for (const it of (sec.items || [])) {
+          if (it.id === pageId) return modeId;
+        }
+      }
+    }
+    return null;
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 5c-bis. Settings panel sections — used by SettingsPanel
+  // ──────────────────────────────────────────────────────────────
+  const SETTINGS_SECTIONS = [
+    {
+      label: "Account",
+      items: [
+        { id: "__settings-profile", label: "Profile & personal info", icon: "user", description: "Name, email, phone, notifications", inert: true },
+        { id: "__settings-theme",   label: "Appearance",              icon: "sparkle", description: "Theme, density, sidebar default" , inert: true },
+      ],
+    },
+    {
+      label: "Workspace",
+      items: [
+        { id: "vcfo-users",   label: "Users & permissions", icon: "users",  description: "Invite team, roles, access" },
+        { id: "vcfo-api",     label: "API & webhooks",      icon: "anchor", description: "Tokens, endpoints, callbacks" },
+      ],
+    },
+    {
+      label: "AI & integrations",
+      items: [
+        { id: "vcfo-agents",     label: "Agents",           icon: "settings",  description: "Automated workflows that run for you" },
+        { id: "vcfo-mcp",        label: "MCP integrations", icon: "mcp",       description: "Model Context Protocol connectors" },
+        { id: "vcfo-doc-studio", label: "Document Studio",  icon: "docStudio", description: "AI doc creation (BETA)" },
+        { id: "ai-upload",       label: "AI Upload",        icon: "aiUpload",  description: "Pipe documents into the system" },
+      ],
+    },
+  ];
+
+  function SettingsPanel({ onPickPage }) {
+    const Icon = window.Icon;
+    return (
+      <div className="fa-settings">
+        {SETTINGS_SECTIONS.map(sec => (
+          <section key={sec.label} className="fa-settings-section">
+            <h3 className="fa-settings-section-label">{sec.label}</h3>
+            <div className="fa-settings-grid">
+              {sec.items.map(it => (
+                <button
+                  key={it.id}
+                  type="button"
+                  className={classNames("fa-settings-card", it.inert && "is-inert")}
+                  onClick={() => { if (!it.inert) onPickPage(it.id); }}
+                  disabled={it.inert}
+                  title={it.inert ? "Coming soon" : it.label}
+                >
+                  <span className="fa-settings-card-icon">
+                    {Icon ? <Icon name={it.icon} size={18} /> : <span>•</span>}
+                  </span>
+                  <span className="fa-settings-card-body">
+                    <span className="fa-settings-card-title">{it.label}</span>
+                    <span className="fa-settings-card-desc">{it.description}</span>
+                    {it.inert && <span className="fa-settings-card-pill">Soon</span>}
+                  </span>
+                  {!it.inert && (
+                    <span className="fa-settings-card-chev" aria-hidden="true">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6l-6 6"/></svg>
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    );
   }
 
   // ──────────────────────────────────────────────────────────────
@@ -692,7 +811,10 @@
     "lp-overview":       { name: "LPOverview" },
     "lp-wire":           { name: "LPWireInstructions" },
   };
-  function PageHost({ pageId }) {
+  function PageHost({ pageId, onPickPage }) {
+    if (pageId === "__flowai-settings") {
+      return <SettingsPanel onPickPage={onPickPage} />;
+    }
     const entry = ROUTE_TO_COMP[pageId];
     const Comp = entry ? resolveComp(entry.name) : null;
     if (Comp) return <Comp {...(entry.props || {})} />;
@@ -985,43 +1107,79 @@
   }
 
   // ──────────────────────────────────────────────────────────────
-  // 10. Left icon rail (persistent, hover-expand overlay)
+  // 10. Left icon rail — mode switch + scroll + profile
   // ──────────────────────────────────────────────────────────────
-  function LeftRail({ entity, pageId, onPickPage }) {
+  function LeftRail({ entity, pageId, onPickPage, railMode, onSetRailMode, onOpenSettings }) {
     const Icon = window.Icon;
-    const sections = useMemo(() => navForEntity(entity), [entity]);
+    const sections = useMemo(() => getModeNavForEntity(entity, railMode), [entity, railMode]);
+    const isEmpty = !sections || sections.length === 0 ||
+      sections.every(s => !s.items || s.items.length === 0);
 
     return (
       <nav className="fa-rail" data-entity={entity} aria-label="Sidebar navigation">
+        <div className="fa-rail-modeswitch" role="tablist" aria-label="Rail mode">
+          {RAIL_MODES.map(m => {
+            const active = railMode === m.id;
+            return (
+              <button
+                key={m.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                className={classNames("fa-rail-mode", active && "active")}
+                onClick={() => onSetRailMode(m.id)}
+                title={m.label}
+              >
+                <span className="fa-rail-mode-icon">
+                  {Icon ? <Icon name={m.icon} size={15} /> : <span>•</span>}
+                </span>
+                <span className="fa-rail-mode-label">{m.label}</span>
+              </button>
+            );
+          })}
+        </div>
         <div className="fa-rail-scroll">
-          {(sections || []).map((sec, si) => (
-            <React.Fragment key={si}>
-              {si > 0 && (
-                <>
+          {isEmpty ? (
+            <div className="fa-rail-empty">Nothing here yet</div>
+          ) : (
+            (sections || []).map((sec, si) => (
+              <React.Fragment key={si}>
+                {si > 0 && (
                   <div className="fa-rail-section-divider"></div>
-                </>
-              )}
-              {sec.label && (
-                <div className="fa-rail-section-label">{sec.label}</div>
-              )}
-              {(sec.items || []).map(item => {
-                const active = pageId === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    className={`fa-rail-item ${active ? "active" : ""}`}
-                    onClick={() => onPickPage(item.id)}
-                    title={item.label}
-                  >
-                    <span className="fa-rail-icon">
-                      {Icon ? <Icon name={item.icon} size={15} /> : <span>•</span>}
-                    </span>
-                    <span className="fa-rail-label">{item.label}</span>
-                  </button>
-                );
-              })}
-            </React.Fragment>
-          ))}
+                )}
+                {sec.label && (
+                  <div className="fa-rail-section-label">{sec.label}</div>
+                )}
+                {(sec.items || []).map(item => {
+                  const active = pageId === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      className={`fa-rail-item ${active ? "active" : ""}`}
+                      onClick={() => onPickPage(item.id)}
+                      title={item.label}
+                    >
+                      <span className="fa-rail-icon">
+                        {Icon ? <Icon name={item.icon} size={15} /> : <span>•</span>}
+                      </span>
+                      <span className="fa-rail-label">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </React.Fragment>
+            ))
+          )}
+        </div>
+        <div className="fa-rail-bottom">
+          <button
+            type="button"
+            className={classNames("fa-rail-profile", pageId === "__flowai-settings" && "active")}
+            onClick={onOpenSettings}
+            title="Morgan Chen — Settings"
+          >
+            <span className="fa-rail-avatar" aria-hidden="true">MC</span>
+            <span className="fa-rail-label">Morgan Chen</span>
+          </button>
         </div>
       </nav>
     );
@@ -1030,15 +1188,19 @@
   // ──────────────────────────────────────────────────────────────
   // 11. Page panel (split-view / fullscreen container)
   // ──────────────────────────────────────────────────────────────
-  function PagePanel({ pageId, entity, pageLabel, viewMode, onSetViewMode }) {
+  function PagePanel({ pageId, entity, pageLabel, viewMode, onSetViewMode, onPickPage }) {
     if (!pageId) return null;
     const Icon = window.Icon;
+    const isSettings = pageId === "__flowai-settings";
+    const crumb = isSettings
+      ? "Browse · Settings"
+      : `Browse · ${ENTITY_BY_ID[entity].label} · ${pageLabel}`;
     return (
       <div className="fa-page-col" data-entity={entity}>
         <div className="fa-page-header">
           <div className="fa-page-header-crumb">
-            {Icon ? <Icon name="folder" size={11} /> : <span>▸</span>}
-            <span>Browse · {ENTITY_BY_ID[entity].label} · {pageLabel}</span>
+            {Icon ? <Icon name={isSettings ? "settings" : "folder"} size={11} /> : <span>▸</span>}
+            <span>{crumb}</span>
           </div>
           <div className="fa-page-header-actions">
             {viewMode === "split" && (
@@ -1057,7 +1219,7 @@
           </div>
         </div>
         <div className="fa-page-body">
-          <PageHost pageId={pageId} />
+          <PageHost pageId={pageId} onPickPage={onPickPage} />
         </div>
       </div>
     );
@@ -1243,6 +1405,7 @@
     const [cmdkOpen, setCmdkOpen] = useState(false);
     const [viewMode, setViewMode] = useState("ai"); // "ai" | "split" | "full"
     const [pageId, setPageId] = useState(null);
+    const [railMode, setRailMode] = useState("analyze"); // "analyze" | "archive" | "artifacts"
     const [theme, setTheme] = useState(() => {
       try { return document.documentElement.getAttribute("data-theme") || "dark"; }
       catch (e) { return "dark"; }
@@ -1257,13 +1420,31 @@
 
     // Single entity-switch handler. Wired to: topbar pills, composer chip,
     // Cmd+1/2/3, and the Cmd+K palette's "Switch entity" submenu.
+    // railMode is preserved across entity changes. pageId is only reset to
+    // the entity's default when the current pageId doesn't exist anywhere
+    // in the new entity's mode-nav (i.e. there's no rail item that would
+    // highlight it in any mode).
     function switchEntity(newEntity) {
       const prev = entityRef.current;
       setEntity(newEntity);
       if ((viewModeRef.current === "split" || viewModeRef.current === "full") && newEntity !== prev) {
-        setPageId(ENTITY_DEFAULT_PAGE[newEntity] || null);
+        const currentPid = pageId;
+        const stillReachable = currentPid && findModeForPage(newEntity, currentPid) !== null;
+        if (!stillReachable) {
+          setPageId(ENTITY_DEFAULT_PAGE[newEntity] || null);
+        }
       }
     }
+
+    // Auto-sync railMode to whichever mode contains the current pageId, so
+    // the rail visually highlights the open page even when it was opened
+    // from somewhere other than a rail click (Settings card, Cmd+K, etc.).
+    useEffect(() => {
+      if (!pageId || pageId === "__flowai-settings") return;
+      const m = findModeForPage(entity, pageId);
+      if (m && m !== railMode) setRailMode(m);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pageId, entity]);
 
     // Auto-scroll thread on new turn (works for both ai-mode stage and split thread-col)
     useEffect(() => {
@@ -1283,9 +1464,16 @@
           setCmdkOpen(o => !o);
           return;
         }
-        if (isMod && e.key === "1") { e.preventDefault(); switchEntity("vcfo"); return; }
-        if (isMod && e.key === "2") { e.preventDefault(); switchEntity("lp"); return; }
-        if (isMod && e.key === "3") { e.preventDefault(); switchEntity("home"); return; }
+        // Cmd+Shift+1/2/3 — switch rail mode. Must come before the plain
+        // Cmd+1/2/3 entity switch since they share digit keys.
+        if (isMod && e.shiftKey) {
+          if (e.key === "1" || e.code === "Digit1") { e.preventDefault(); setRailMode("analyze");   return; }
+          if (e.key === "2" || e.code === "Digit2") { e.preventDefault(); setRailMode("archive");   return; }
+          if (e.key === "3" || e.code === "Digit3") { e.preventDefault(); setRailMode("artifacts"); return; }
+        }
+        if (isMod && !e.shiftKey && e.key === "1") { e.preventDefault(); switchEntity("vcfo"); return; }
+        if (isMod && !e.shiftKey && e.key === "2") { e.preventDefault(); switchEntity("lp"); return; }
+        if (isMod && !e.shiftKey && e.key === "3") { e.preventDefault(); switchEntity("home"); return; }
         if (e.key === "Escape") {
           if (viewModeRef.current === "split" || viewModeRef.current === "full") {
             setViewMode("ai");
@@ -1376,8 +1564,18 @@
 
     function pageLabel(pid) {
       if (!pid) return "";
-      const lists = navForEntity(entity) || [];
-      for (const sec of lists) {
+      if (pid === "__flowai-settings") return "Settings";
+      // Search across all modes for the current entity, then fall back to
+      // a settings-section lookup (so labels for Agents / MCP / etc. resolve).
+      const byEntity = MODE_NAV[entity] || {};
+      for (const modeId of Object.keys(byEntity)) {
+        for (const sec of (byEntity[modeId] || [])) {
+          for (const it of (sec.items || [])) {
+            if (it.id === pid) return it.label;
+          }
+        }
+      }
+      for (const sec of SETTINGS_SECTIONS) {
         for (const it of (sec.items || [])) {
           if (it.id === pid) return it.label;
         }
@@ -1387,6 +1585,11 @@
 
     function openPage(pid) {
       setPageId(pid);
+      setViewMode("split");
+    }
+
+    function openSettings() {
+      setPageId("__flowai-settings");
       setViewMode("split");
     }
 
@@ -1471,6 +1674,9 @@
             entity={entity}
             pageId={pageId}
             onPickPage={openPage}
+            railMode={railMode}
+            onSetRailMode={setRailMode}
+            onOpenSettings={openSettings}
           />
           <div className="fa-main">
             <TopBar
@@ -1494,6 +1700,7 @@
                     pageLabel={pageLabel(pageId)}
                     viewMode={viewMode}
                     onSetViewMode={setViewMode}
+                    onPickPage={openPage}
                   />
                   <div className="fa-thread-col">
                     <ConversationPanel />
