@@ -28,6 +28,40 @@
   --entity-border: rgba(15, 118, 110, 0.18);
 }
 
+/* ─── HextaUI design tokens ─── */
+:root {
+  /* Radius scale */
+  --hu-radius:        0.925rem;   /* ~14.8 px — base for cards */
+  --hu-radius-sm:     0.5rem;     /*  8 px */
+  --hu-radius-md:     0.625rem;   /* 10 px — buttons / inputs */
+  --hu-radius-lg:     0.925rem;   /* 14.8 px — cards */
+  --hu-radius-xl:     1.2rem;     /* 19.2 px — large dialogs */
+  --hu-radius-full:   9999px;     /* badges, pills, avatar */
+
+  /* Shadow scale */
+  --hu-shadow-xs: 0 1px 3px 0 rgba(0,0,0,.05);
+  --hu-shadow-sm: 0 1px 3px 0 rgba(0,0,0,.10), 0 1px 2px -1px rgba(0,0,0,.10);
+  --hu-shadow-md: 0 1px 3px 0 rgba(0,0,0,.10), 0 2px 4px -1px rgba(0,0,0,.10);
+  --hu-shadow-lg: 0 1px 3px 0 rgba(0,0,0,.10), 0 4px 6px -1px rgba(0,0,0,.10);
+
+  /* Tactile signature: tiny press scale on actionable elements */
+  --hu-press: 0.97;
+
+  /* Focus ring — 3 px translucent ring around interactive surfaces */
+  --hu-ring-w: 3px;
+  --hu-ring:  0 0 0 var(--hu-ring-w) rgba(113, 113, 122, 0.35);
+}
+
+/* Dark theme uses a stronger ring */
+:root[data-theme="dark"] {
+  --hu-ring: 0 0 0 var(--hu-ring-w) rgba(244, 244, 245, 0.18);
+}
+
+/* Accent-tinted focus ring helper class (for inputs that should ring sky) */
+.fa-shell :focus-visible {
+  outline: none;
+}
+
 /* ─── Font stack ─── */
 .fa-shell,
 .fa-shell input,
@@ -290,11 +324,11 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
   display: flex;
   flex-direction: column;
   position: relative;
-  border-radius: 8px;
+  border-radius: var(--hu-radius-lg);
   overflow: hidden;
   background: var(--surface);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--hu-shadow-md);
   height: 100%;
   min-height: 0;
 }
@@ -385,7 +419,7 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 }
 .fa-composer:focus-within {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-ring-14);
+  box-shadow: 0 0 0 var(--hu-ring-w) var(--accent-ring-14);
 }
 .fa-composer-row {
   display: flex;
@@ -406,14 +440,16 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 .fa-composer-input::placeholder { color: var(--muted-2); }
 .fa-composer-send {
   width: 30px; height: 30px;
-  border-radius: 6px;
+  border-radius: var(--hu-radius-md);
   background: var(--accent);
   color: #FFFFFF;
   border: none;
   display: inline-flex; align-items: center; justify-content: center;
   cursor: pointer;
-  transition: background 120ms ease, opacity 120ms ease;
+  transition: background 120ms ease, opacity 120ms ease, transform 120ms ease, box-shadow 120ms ease;
 }
+.fa-composer-send:active:not(:disabled) { transform: scale(var(--hu-press)); }
+.fa-composer-send:focus-visible { box-shadow: var(--hu-ring); }
 .fa-composer-send:hover { background: var(--accent-hover); }
 .fa-composer-send:disabled {
   opacity: 0.4;
@@ -465,8 +501,8 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
   bottom: auto;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: var(--shadow-pop);
+  border-radius: var(--hu-radius-lg);
+  box-shadow: var(--hu-shadow-md);
   padding: 6px;
   z-index: 60;
   min-width: 200px;
@@ -588,7 +624,7 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 11px;
   padding: 3px 8px;
-  border-radius: 4px;
+  border-radius: var(--hu-radius-full);
   background: var(--bg-2);
   border: 1px solid var(--border);
   color: var(--muted-2);
@@ -616,7 +652,7 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
   font-size: 10px;
   padding: 1px 5px;
   margin: 0 2px;
-  border-radius: 3px;
+  border-radius: var(--hu-radius-full);
   background: var(--accent-tint);
   color: var(--accent);
   cursor: pointer;
@@ -645,10 +681,10 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 .fa-card {
   width: 100%;
   padding: 0;
-  border-radius: 8px;
+  border-radius: var(--hu-radius-lg);
   background: var(--surface);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--hu-shadow-sm);
   overflow: hidden;
   position: relative;
   transition: border-color 160ms ease, box-shadow 160ms ease;
@@ -687,7 +723,7 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 10.5px;
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--hu-radius-full);
   background: var(--chip);
   color: var(--muted);
   font-weight: 500;
@@ -1073,7 +1109,7 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 }
 .fa-rail-avatar {
   width: 30px; height: 30px;
-  border-radius: 999px;
+  border-radius: 50%;
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
@@ -1084,7 +1120,9 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
   letter-spacing: 0.02em;
   background: var(--accent);
   border: 1px solid var(--accent-hover);
+  transition: transform 120ms ease;
 }
+.fa-rail-profile:active .fa-rail-avatar { transform: scale(var(--hu-press)); }
 .fa-rail-profile .fa-rail-label {
   opacity: 0;
   transition: opacity 160ms ease 40ms;
@@ -1117,9 +1155,10 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  border-radius: 8px;
+  border-radius: var(--hu-radius-lg);
   background: var(--surface);
   border: 1px solid var(--border);
+  box-shadow: var(--hu-shadow-xs);
   color: var(--fg);
   font-family: inherit;
   text-align: left;
@@ -1170,7 +1209,7 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
   font-size: 10.5px;
   font-weight: 500;
   letter-spacing: 0.02em;
-  border-radius: 4px;
+  border-radius: var(--hu-radius-full);
   background: var(--chip);
   color: var(--muted);
 }
@@ -1203,9 +1242,14 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
   max-width: 560px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  box-shadow: var(--shadow-modal);
+  border-radius: var(--hu-radius-xl);
+  box-shadow: var(--hu-shadow-lg);
   overflow: hidden;
+  animation: huScaleIn 200ms ease;
+}
+@keyframes huScaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
 }
 .fa-cmdk-crumbs {
   display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
@@ -1230,6 +1274,11 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
   font-size: 14.5px;
   color: var(--fg);
   border-bottom: 1px solid var(--border);
+  border-radius: var(--hu-radius-md);
+  transition: box-shadow 120ms ease;
+}
+.fa-cmdk-input:focus {
+  box-shadow: inset 0 0 0 var(--hu-ring-w) var(--accent-ring-14);
 }
 .fa-cmdk-input::placeholder { color: var(--muted-2); }
 .fa-cmdk-list { max-height: 360px; overflow-y: auto; padding: 6px; }
@@ -1237,7 +1286,7 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 .fa-cmdk-item {
   display: flex; align-items: center; gap: 10px;
   padding: 9px 12px;
-  border-radius: 6px;
+  border-radius: var(--hu-radius-md);
   font-size: 13.5px;
   color: var(--fg);
   cursor: pointer;
@@ -1296,7 +1345,8 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 .fa-report-chat {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--hu-radius-lg);
+  box-shadow: var(--hu-shadow-sm);
   padding: 14px;
   display: flex; flex-direction: column; gap: 10px;
   height: fit-content;
@@ -1324,7 +1374,8 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 .fa-report-doc {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--hu-radius-lg);
+  box-shadow: var(--hu-shadow-sm);
   padding: 28px 32px;
   min-height: 480px;
 }
@@ -1455,7 +1506,7 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 .fa-stage[data-view-mode="split"] .fa-thread-col .fa-grid .fa-card-xl {
   grid-column: 1 / -1;
 }
-.fa-stage[data-view-mode="split"] .fa-thread-col .fa-card { border-radius: 8px; }
+.fa-stage[data-view-mode="split"] .fa-thread-col .fa-card { border-radius: var(--hu-radius-lg); }
 .fa-stage[data-view-mode="split"] .fa-thread-col .fa-card > .fa-card-inner { padding: 14px 16px; }
 .fa-stage[data-view-mode="split"] .fa-thread-col .fa-card-head { margin-bottom: 8px; }
 .fa-stage[data-view-mode="split"] .fa-thread-col .fa-card-title { font-size: 12px; }
@@ -1536,4 +1587,45 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 }
 :root:not([data-theme="light"]) .fa-accept-strip button kbd {
   background: rgba(255, 255, 255, 0.10);
+}
+
+/* ─── HextaUI shared button/chip behavior ─────────────────────────
+   Bumps radius to 10 px, adds tactile press scale + 3 px focus ring.
+   .fa-rail-item is row-style nav so it gets the ring but NOT press.
+   ─────────────────────────────────────────────────────────────── */
+.fa-page-btn,
+.fa-cmdk-btn,
+.fa-theme-btn,
+.fa-followup-chip,
+.fa-prompt-chip,
+.fa-rail-mode,
+.fa-rail-item,
+.fa-entity-pill,
+.fa-rail-profile,
+.fa-settings-card {
+  border-radius: var(--hu-radius-md);
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+}
+.fa-page-btn:active,
+.fa-cmdk-btn:active,
+.fa-theme-btn:active,
+.fa-followup-chip:active,
+.fa-prompt-chip:active,
+.fa-rail-mode:active,
+.fa-entity-pill:active,
+.fa-rail-profile:active,
+.fa-settings-card:active:not(:disabled) {
+  transform: scale(var(--hu-press));
+}
+.fa-page-btn:focus-visible,
+.fa-cmdk-btn:focus-visible,
+.fa-theme-btn:focus-visible,
+.fa-followup-chip:focus-visible,
+.fa-prompt-chip:focus-visible,
+.fa-rail-mode:focus-visible,
+.fa-rail-item:focus-visible,
+.fa-entity-pill:focus-visible,
+.fa-rail-profile:focus-visible,
+.fa-settings-card:focus-visible {
+  box-shadow: var(--hu-ring);
 }
