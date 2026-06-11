@@ -210,7 +210,7 @@ function Ic({ d, size = 16, sw = 1.7 }) {
   );
 }
 
-function Wordmark({ h = 26, color = "#0F2A52" }) {
+function Wordmark({ h = 26, color = "#1F1F1D" }) {
   return (
     <svg height={h} viewBox="0 0 92 32" fill="none" aria-label="zive">
       <text x="0" y="25" fontFamily="Inter, sans-serif" fontSize="27" fontWeight="700" letterSpacing="-0.5" fill={color}>zive</text>
@@ -238,13 +238,92 @@ function Empty({ icon = "dist", title, desc }) {
   );
 }
 
-function KPI({ k, v, s }) {
+function KPI({ k, v, s, icon, pill, pillTone = "pos" }) {
   return (
     <div className="kpi">
-      <div className="k">{k}</div>
-      <div className="v num">{v}</div>
+      <div className="k">{k}{icon ? <span className="ic"><Ic d={icon} size={15} /></span> : null}</div>
+      <div className="v-row">
+        <div className="v num">{v}</div>
+        {pill ? <Chip tone={pillTone}>{pill}</Chip> : null}
+      </div>
       {s ? <div className="s">{s}</div> : null}
     </div>
+  );
+}
+
+/* ---------------- charts ---------------- */
+
+/* Quarterly capital account history — paid-in is cumulative and
+   matches the call schedule; year-end values match the K-1s. */
+const NAV_HISTORY = [
+  { q: "Q4 '24", paid: 183750.00, value: 293544.40 },
+  { q: "Q1 '25", paid: 227500.00, value: 305210.55 },
+  { q: "Q2 '25", paid: 227500.00, value: 322884.12 },
+  { q: "Q3 '25", paid: 268299.39, value: 371067.40 },
+  { q: "Q4 '25", paid: 268299.39, value: 430257.97 },
+  { q: "Q1 '26", paid: 268299.39, value: 477678.09 },
+];
+
+function roundedTopRect(x, y, w, h, r) {
+  const rr = Math.min(r, h, w / 2);
+  return `M${x},${y + h} L${x},${y + rr} Q${x},${y} ${x + rr},${y} L${x + w - rr},${y} Q${x + w},${y} ${x + w},${y + rr} L${x + w},${y + h} Z`;
+}
+
+function GrowthChart() {
+  const W = 680, H = 252, padL = 48, padB = 28, padT = 12;
+  const max = 500000;
+  const plotH = H - padB - padT;
+  const plotW = W - padL - 8;
+  const groupW = plotW / NAV_HISTORY.length;
+  const bw = 22, gap = 8;
+  const y = v => padT + plotH * (1 - v / max);
+  const h = v => plotH * (v / max);
+  const ticks = [0, 100000, 200000, 300000, 400000, 500000];
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }} role="img" aria-label="Capital account growth by quarter">
+      {ticks.map(t => (
+        <g key={t}>
+          <line x1={padL} x2={W - 4} y1={y(t)} y2={y(t)} stroke="var(--border)" strokeDasharray={t === 0 ? undefined : "2 5"} />
+          <text x={padL - 9} y={y(t) + 3.5} textAnchor="end" className="chart-axis">{t === 0 ? "0" : `$${t / 1000}k`}</text>
+        </g>
+      ))}
+      {NAV_HISTORY.map((d, i) => {
+        const cx = padL + groupW * i + groupW / 2;
+        return (
+          <g key={d.q}>
+            <path d={roundedTopRect(cx - bw - gap / 2, y(d.value), bw, h(d.value), 7)} fill="var(--teal-bar)" />
+            <path d={roundedTopRect(cx + gap / 2, y(d.paid), bw, h(d.paid), 7)} fill="var(--teal-bar-light)" />
+            <text x={cx} y={H - 9} textAnchor="middle" className="chart-axis">{d.q}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+const DONUT_COLORS = ["#6E4A3E", "#8C5A4F", "#A96F5F", "#C28572", "#D69E88", "#E5B7A1", "#EFCDBA", "#F7E2D4"];
+
+function arcPath(cx, cy, r, a0, a1) {
+  const pt = a => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  const [x0, y0] = pt(a0), [x1, y1] = pt(a1);
+  const large = a1 - a0 > Math.PI ? 1 : 0;
+  return `M${x0.toFixed(2)},${y0.toFixed(2)} A${r},${r} 0 ${large} 1 ${x1.toFixed(2)},${y1.toFixed(2)}`;
+}
+
+function Donut({ data, size = 200, thickness = 32 }) {
+  const total = data.reduce((s, d) => s + d.v, 0);
+  const r = (size - thickness) / 2, c = size / 2;
+  const gapRad = 0.045;
+  let a = -Math.PI / 2;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="Allocation donut chart">
+      {data.map((d, i) => {
+        const span = (d.v / total) * Math.PI * 2;
+        const path = arcPath(c, c, r, a + gapRad / 2, a + span - gapRad / 2);
+        a += span;
+        return <path key={i} d={path} stroke={d.color} strokeWidth={thickness} fill="none" />;
+      })}
+    </svg>
   );
 }
 
@@ -553,8 +632,8 @@ function OverviewPage({ go }) {
     <div className="page fade-in">
       <div className="page-head">
         <div>
-          <div className="page-title">Overview</div>
-          <div className="page-sub">Values as of {AS_OF} · updated from the fund ledger</div>
+          <div className="page-title">Good morning, {LP.person.split(" ")[0]}!</div>
+          <div className="page-sub">Here's where your {FUND.name} account stands · values as of {AS_OF}</div>
         </div>
         <div className="page-actions">
           <button className="btn btn-secondary" onClick={() => go("personal")}><Ic d="download" size={14} /> Statement PDF</button>
@@ -590,24 +669,35 @@ function OverviewPage({ go }) {
         </div>
       </div>
 
-      <div className="kpi-row section-gap">
-        <KPI k="Committed" v={fmt(FUND.committed)} s="Subscription executed Jan 5, 2024" />
-        <KPI k="Called to date" v={fmt(FUND.called)} s={`${FUND.calledPct} of commitment`} />
-        <KPI k="Paid in" v={fmt(FUND.paidIn)} s={`${FUND.paidPct} of commitment`} />
-        <KPI k="Net asset value" v={fmt(FUND.nav)} s={`Ownership ${FUND.ownership}`} />
-        <KPI k="Distributed" v={fmt(FUND.distributed)} s="No distributions yet" />
-        <KPI k="Due to fund now" v={fmt(FUND.dueNow)} s="Capital Call #6 · due Apr 16" />
+      <div className="kpi-row section-gap" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
+        <KPI k="Committed" v={fmt(FUND.committed)} icon="legal" s="Subscription executed Jan 5, 2024" />
+        <KPI k="Net asset value" v={fmt(FUND.nav)} icon="trend" pill="↗ 11.0%" pillTone="pos" s={`Ownership ${FUND.ownership} · vs Q4 2025`} />
+        <KPI k="Paid in" v={fmt(FUND.paidIn)} icon="check" pill={FUND.paidPct} pillTone="acc" s="5 capital calls settled" />
+        <KPI k="Due to fund now" v={fmt(FUND.dueNow)} icon="call" pill="Due Apr 16" pillTone="warn" s="Capital Call #6 · issued Apr 2, 2026" />
+      </div>
+
+      <div className="card section-gap">
+        <div className="card-head">
+          <div className="card-title">Capital account growth</div>
+          <div className="chart-legend">
+            <span className="li"><span className="swatch" style={{ background: "var(--teal-bar)" }} /> Account value</span>
+            <span className="li"><span className="swatch" style={{ background: "var(--teal-bar-light)" }} /> Paid-in capital</span>
+          </div>
+        </div>
+        <div className="card-pad" style={{ paddingTop: 18 }}>
+          <GrowthChart />
+        </div>
       </div>
 
       <div className="card section-gap card-pad">
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
           <div className="card-title">Commitment progress</div>
-          <div className="page-sub num">{fmt(FUND.paidIn)} paid of {fmt(FUND.committed)} committed</div>
+          <div className="page-sub num" style={{ marginTop: 0 }}>{fmt(FUND.paidIn)} paid of {fmt(FUND.committed)} committed</div>
         </div>
         <div className="progress"><div className="fill" style={{ width: "76.66%" }} /></div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 7, fontSize: 11.5, color: "var(--muted)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 12, color: "var(--muted)" }}>
           <span>Paid in {FUND.paidPct}</span>
-          <span>Unfunded {fmt(FUND.unfunded)}</span>
+          <span>Called {FUND.calledPct} · Unfunded {fmt(FUND.unfunded)}</span>
         </div>
       </div>
 
@@ -698,11 +788,28 @@ function InvestmentsPage() {
           <div className="page-sub">Fund portfolio as of {AS_OF} · your indirect exposure is {FUND.ownership} of each position</div>
         </div>
       </div>
-      <div className="kpi-row" style={{ marginBottom: 20 }}>
-        <KPI k="Portfolio companies" v={HOLDINGS.length} />
-        <KPI k="Invested capital" v={fmtK(invested)} />
-        <KPI k="Fair value" v={fmtK(fair)} />
-        <KPI k="Gross multiple" v={(fair / invested).toFixed(2) + "×"} />
+      <div className="kpi-row" style={{ marginBottom: 18 }}>
+        <KPI k="Portfolio companies" v={HOLDINGS.length} icon="folder" />
+        <KPI k="Invested capital" v={fmtK(invested)} icon="bank" />
+        <KPI k="Fair value" v={fmtK(fair)} icon="trend" pill={`${(fair / invested).toFixed(2)}×`} pillTone="pos" />
+        <KPI k="Your share" v={FUND.ownership} icon="pie" s="Of every position below" />
+      </div>
+      <div className="card" style={{ marginBottom: 18 }}>
+        <div className="card-head"><div className="card-title">Allocation by sector</div><Chip>Fair value · {AS_OF}</Chip></div>
+        <div className="card-pad">
+          <div className="donut-wrap">
+            <Donut data={HOLDINGS.map((h, i) => ({ v: h.fair, color: DONUT_COLORS[i] }))} />
+            <div className="donut-legend">
+              {HOLDINGS.map((h, i) => (
+                <div key={h.co} className="li">
+                  <span className="swatch" style={{ background: DONUT_COLORS[i] }} />
+                  {h.sector}
+                  <span className="pct num">{(h.fair / fair * 100).toFixed(1)}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
       <div className="card">
         <table className="tbl">
@@ -769,11 +876,11 @@ function CapitalCallsPage({ go }) {
           <div className="page-sub">Every call notice and payment confirmation is preserved as an official record.</div>
         </div>
       </div>
-      <div className="kpi-row" style={{ marginBottom: 20 }}>
-        <KPI k="Outstanding" v={fmt(pending.amount)} s="Call #6 · due Apr 16, 2026" />
-        <KPI k="Called to date" v={fmt(FUND.called)} s={`${FUND.calledPct} of commitment`} />
-        <KPI k="Paid to date" v={fmt(FUND.paidIn)} s="5 calls settled" />
-        <KPI k="Unfunded commitment" v={fmt(FUND.unfunded)} s="Remaining callable" />
+      <div className="kpi-row" style={{ marginBottom: 18 }}>
+        <KPI k="Outstanding" v={fmt(pending.amount)} icon="warn" pill="Due Apr 16" pillTone="warn" s="Capital Call #6" />
+        <KPI k="Called to date" v={fmt(FUND.called)} icon="call" s={`${FUND.calledPct} of commitment`} />
+        <KPI k="Paid to date" v={fmt(FUND.paidIn)} icon="check" s="5 calls settled" />
+        <KPI k="Unfunded commitment" v={fmt(FUND.unfunded)} icon="pie" s="Remaining callable" />
       </div>
 
       <div className="card">
@@ -859,7 +966,7 @@ function PersonalStatementPage({ go }) {
           <div className="page-sub">Capital account statement for {LP.entity}</div>
         </div>
         <div className="page-actions">
-          <select style={{ padding: "8px 12px", border: "1px solid var(--border-strong)", borderRadius: 6, background: "var(--surface)" }}>
+          <select className="select-pill">
             <option>Q1 2026 (Jan 1 — Mar 31)</option>
             <option>Q4 2025</option><option>Q3 2025</option><option>Q2 2025</option>
           </select>
@@ -1256,7 +1363,9 @@ function Portal({ onSignOut, initialRoute }) {
             <button className="icon-btn" onClick={() => { setNotifOpen(o => !o); setMenuOpen(false); }} aria-label="Notifications">
               <Ic d="bell" size={17} /><span className="dot" />
             </button>
-            <button className="icon-btn" style={{ width: "auto", padding: "0 2px" }} onClick={() => { setMenuOpen(o => !o); setNotifOpen(false); }} aria-label="Account">
+            <button className="topbar-user" onClick={() => { setMenuOpen(o => !o); setNotifOpen(false); }} aria-label="Account">
+              <span className="n">{LP.person}</span>
+              <Ic d="chevD" size={13} />
               <span className="avatar">{LP.initials}</span>
             </button>
           </div>
