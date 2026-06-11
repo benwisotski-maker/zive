@@ -1664,11 +1664,8 @@
 
     return (
       <>
-        <BeamsBackground
-          entityHueBase={ENTITY_HUE_BASE[entity] || 190}
-          intensity="strong"
-          theme={theme}
-        />
+        {/* BeamsBackground retired — replaced by solid enterprise surface in CSS.
+            The component is kept below in case it's reintroduced as an option. */}
         <div className="fa-shell" data-entity={entity}>
           <LeftRail
             entity={entity}
