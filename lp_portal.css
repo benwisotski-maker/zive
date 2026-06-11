@@ -43,11 +43,8 @@
   --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
-/* Scale the whole demo up on large/high-res monitors so it never
-   looks like a small island on a 4K display. */
-@media (min-width: 1800px) { body { zoom: 1.2; } }
-@media (min-width: 2400px) { body { zoom: 1.5; } }
-@media (min-width: 3200px) { body { zoom: 1.85; } }
+/* No upscaling on large monitors — the app keeps its natural size
+   and is centered instead (see .portal max-width + app frame). */
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
@@ -255,7 +252,19 @@ a:hover { text-decoration: underline; }
 }
 
 /* ---------- portal shell ---------- */
-.portal { display: flex; height: calc(100vh - 40px); }
+.portal { display: flex; height: calc(100vh - 40px); max-width: 1840px; margin: 0 auto; background: var(--surface); }
+/* On monitors wider than the shell, float it as a centered,
+   rounded app frame on the page background. */
+@media (min-width: 1900px) {
+  .portal {
+    height: calc(100vh - 40px - 56px);
+    margin: 28px auto;
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+  }
+}
 .sidebar {
   width: 248px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border);
   display: flex; flex-direction: column; overflow-y: auto;
