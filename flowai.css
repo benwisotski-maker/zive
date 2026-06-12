@@ -1918,3 +1918,52 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
   width: 64px; height: 64px; border-radius: 50%; background: #E8F6EC; color: #16A34A;
   display: flex; align-items: center; justify-content: center; margin: 30px auto 22px;
 }
+
+/* ────────────────────────────────────────────────────────────────
+   Rail v2 — floating rounded island. Hugs its content (no full-
+   height column), expands wide enough that nothing clips, and the
+   profile moved to the topbar next to the theme toggle.
+   ──────────────────────────────────────────────────────────────── */
+.fa-rail {
+  top: 74px;
+  left: 14px;
+  bottom: auto;
+  height: auto;
+  max-height: calc(100vh - 94px);
+  border-right: none;
+  border-radius: 18px;
+  box-shadow: var(--hu-shadow-sm);
+  padding: 4px;
+}
+.fa-rail:hover {
+  width: 304px;
+  box-shadow: var(--hu-shadow-lg);
+}
+.fa-rail-scroll { flex: 0 1 auto; }
+.fa-rail-modeswitch { border-bottom: 1px solid var(--border); }
+.fa-rail:hover .fa-rail-mode { padding: 6px 4px; gap: 8px; }
+.fa-rail-item.active::before,
+.fa-rail-mode.active::before { border-radius: 2px; left: -4px; }
+.fa-main { padding-left: 84px; }
+
+/* Profile tile in the topbar (next to theme toggle) */
+.fa-profile-btn {
+  width: 34px; height: 34px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: none;
+  box-shadow: var(--hu-shadow-xs);
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: box-shadow 120ms ease, transform 120ms ease;
+}
+.fa-profile-btn:hover { box-shadow: var(--hu-shadow-md); }
+.fa-profile-btn:active { transform: scale(var(--hu-press)); }
+.fa-profile-btn.active { box-shadow: 0 0 0 2px var(--fg), var(--hu-shadow-xs); }
+.fa-profile-btn .fa-rail-avatar {
+  width: 26px; height: 26px;
+  border-radius: 9px;
+  font-size: 10.5px;
+  border: none;
+}

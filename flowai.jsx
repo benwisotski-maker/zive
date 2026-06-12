@@ -829,7 +829,7 @@
   // ──────────────────────────────────────────────────────────────
   // 6. Slim TopBar
   // ──────────────────────────────────────────────────────────────
-  function TopBar({ entity, onEntity, onOpenCmdk, onToggleTheme, theme }) {
+  function TopBar({ entity, onEntity, onOpenCmdk, onToggleTheme, theme, onOpenSettings, profileActive }) {
     const ZW = window.ZiveWordmark;
     const STRIP = [
       { id: "vcfo", label: "VCFO" },
@@ -867,6 +867,15 @@
             ) : (
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
             )}
+          </button>
+          <button
+            type="button"
+            className={classNames("fa-profile-btn", profileActive && "active")}
+            onClick={onOpenSettings}
+            title="Morgan Chen — Settings"
+            aria-label="Morgan Chen — Settings"
+          >
+            <span className="fa-rail-avatar" aria-hidden="true">MC</span>
           </button>
         </div>
       </div>
@@ -1169,17 +1178,6 @@
               </React.Fragment>
             ))
           )}
-        </div>
-        <div className="fa-rail-bottom">
-          <button
-            type="button"
-            className={classNames("fa-rail-profile", pageId === "__flowai-settings" && "active")}
-            onClick={onOpenSettings}
-            title="Morgan Chen — Settings"
-          >
-            <span className="fa-rail-avatar" aria-hidden="true">MC</span>
-            <span className="fa-rail-label">Morgan Chen</span>
-          </button>
         </div>
       </nav>
     );
@@ -2022,6 +2020,8 @@
               onOpenCmdk={() => setCmdkOpen(true)}
               onToggleTheme={toggleTheme}
               theme={theme}
+              onOpenSettings={openSettings}
+              profileActive={pageId === "__flowai-settings" && viewMode !== "ai"}
             />
             <div
               className={classNames("fa-stage", "fa-stage-" + mode)}
