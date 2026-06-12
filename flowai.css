@@ -1629,3 +1629,292 @@ html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 .fa-settings-card:focus-visible {
   box-shadow: var(--hu-ring);
 }
+
+/* ════════════════════════════════════════════════════════════════
+   AirAxis retheme (v5) — cool neutral grays, borderless floating
+   cards, large radii, near-black as the only interactive color.
+   Token override layer: appended last so it wins the cascade.
+   Inter replaces Geist (kept as fallback).
+   ════════════════════════════════════════════════════════════════ */
+
+:root {
+  --hu-radius: 1.25rem;
+  --hu-radius-sm: 0.625rem;
+  --hu-radius-md: 0.75rem;
+  --hu-radius-lg: 1.25rem;
+  --hu-radius-xl: 1.5rem;
+  --hu-shadow-xs: 0 1px 2px rgba(20, 20, 25, 0.04), 0 3px 10px rgba(20, 20, 25, 0.04);
+  --hu-shadow-sm: 0 1px 2px rgba(20, 20, 25, 0.04), 0 4px 14px rgba(20, 20, 25, 0.05);
+  --hu-shadow-md: 0 2px 6px rgba(20, 20, 25, 0.05), 0 14px 36px rgba(20, 20, 25, 0.08);
+  --hu-shadow-lg: 0 18px 50px rgba(20, 20, 25, 0.16);
+  --hu-ring: 0 0 0 var(--hu-ring-w) rgba(20, 20, 22, 0.12);
+}
+
+:root[data-theme="light"] {
+  --bg: #EDEEF1;
+  --bg-2: #F4F4F6;
+  --surface: #FFFFFF;
+  --surface-2: #F4F4F6;
+  --elevated: #FFFFFF;
+  --fg: #141416;
+  --fg-2: #2E2E33;
+  --muted: #74747D;
+  --muted-2: #94949D;
+  --muted-3: #B4B4BC;
+  --border: #E6E6EB;
+  --border-strong: #D8D8DF;
+  --border-bright: #CCCCD4;
+  --accent: #141416;
+  --accent-hover: #2A2A2E;
+  --accent-tint: #ECECF0;
+  --accent-ring-14: rgba(20, 20, 22, 0.12);
+  --accent-ring-18: rgba(20, 20, 22, 0.16);
+  --accent-ring-20: rgba(20, 20, 22, 0.18);
+  --chip: #ECECF0;
+  --pos: #16A34A;
+  --neg: #EF4444;
+  --warn: #D97706;
+}
+:root[data-theme="light"] body {
+  background: linear-gradient(180deg, #F0F0F3 0%, #E6E7EB 60%, #E3E4E9 100%) fixed;
+}
+:root[data-theme="light"] .fa-shell { background: transparent; }
+
+/* Inter first — user preference; Geist stays as fallback */
+.fa-shell,
+.fa-shell input,
+.fa-shell button,
+.fa-shell select,
+.fa-shell textarea,
+.fa-shell .num,
+.fa-shell .display-num,
+.fa-shell .fa-kpi-value,
+.fa-shell .fa-spark-value {
+  font-family: 'Inter', 'Geist', system-ui, sans-serif;
+}
+
+/* Entity identity collapses to neutral — color lives in data only */
+[data-entity="vcfo"], [data-entity="lp"], [data-entity="home"] {
+  --entity-accent: #141416;
+  --entity-tint: rgba(20, 20, 22, 0.06);
+  --entity-tint-strong: rgba(20, 20, 22, 0.10);
+  --entity-border: rgba(20, 20, 22, 0.14);
+}
+.fa-entity-pill[data-entity="vcfo"] .fa-entity-dot,
+.fa-entity-pill[data-entity="lp"] .fa-entity-dot,
+.fa-entity-pill[data-entity="home"] .fa-entity-dot { background: var(--muted-2); }
+
+/* Topbar floats on the gradient; entity pills become tiles */
+.fa-topbar {
+  height: 60px;
+  background: transparent;
+  border-bottom: none;
+  padding: 0 20px;
+}
+.fa-rail { top: 60px; }
+.fa-entity-pill {
+  background: var(--surface);
+  border: none;
+  border-radius: 12px;
+  box-shadow: var(--hu-shadow-xs);
+  padding: 8px 16px;
+  color: var(--muted);
+}
+.fa-entity-pill:hover { background: var(--surface); color: var(--fg); box-shadow: var(--hu-shadow-md); }
+.fa-entity-pill.active {
+  background: var(--fg);
+  color: var(--bg);
+  border-color: transparent;
+  box-shadow: 0 6px 18px rgba(20, 20, 22, 0.25);
+}
+.fa-entity-pill.active .fa-entity-dot { background: var(--bg); }
+.fa-cmdk-btn, .fa-theme-btn {
+  background: var(--surface);
+  border: none;
+  border-radius: 12px;
+  box-shadow: var(--hu-shadow-xs);
+}
+.fa-theme-btn { width: 34px; height: 34px; }
+.fa-cmdk-btn:hover, .fa-theme-btn:hover { background: var(--surface); color: var(--fg); box-shadow: var(--hu-shadow-md); }
+
+/* Rail: white floating surface, neutral active states */
+.fa-rail { background: var(--surface); border-right: 1px solid var(--border); }
+.fa-rail:hover { box-shadow: var(--hu-shadow-lg); }
+.fa-rail-item, .fa-rail-mode, .fa-rail-profile { border-radius: 10px; }
+.fa-rail-item.active::before, .fa-rail-mode.active::before, .fa-rail-profile.active::before { background: var(--fg); }
+.fa-rail-avatar { background: var(--fg); color: var(--bg); border-color: var(--fg); border-radius: 10px; }
+
+/* Composer: borderless rounded card, dark circular send */
+.fa-composer {
+  border-radius: 18px;
+  border-color: transparent;
+  box-shadow: var(--hu-shadow-sm);
+}
+.fa-composer:focus-within {
+  border-color: transparent;
+  box-shadow: var(--hu-shadow-md), 0 0 0 3px rgba(20, 20, 22, 0.08);
+}
+.fa-composer-row { padding: 12px 14px; }
+.fa-composer-send {
+  border-radius: 999px;
+  width: 34px; height: 34px;
+  background: var(--fg);
+  color: var(--bg);
+}
+.fa-composer-send:hover { background: var(--accent-hover); color: #fff; }
+.fa-entity-chip { border-radius: 999px; }
+
+/* Chips become white pills on shadow */
+.fa-prompt-chip, .fa-followup-chip {
+  background: var(--surface);
+  border: none;
+  border-radius: 999px;
+  box-shadow: var(--hu-shadow-xs);
+  padding: 8px 16px;
+}
+.fa-prompt-chip:hover, .fa-followup-chip:hover {
+  background: var(--surface);
+  box-shadow: var(--hu-shadow-md);
+}
+.fa-turn-user-prefix { border-radius: 999px; border: none; background: var(--chip); }
+
+/* Cards: borderless, larger radius */
+.fa-card { border-color: transparent; border-radius: 20px; box-shadow: var(--hu-shadow-sm); }
+.fa-card:hover { border-color: transparent; box-shadow: var(--hu-shadow-md); }
+.fa-page-col { border-color: transparent; border-radius: 20px; }
+.fa-page-btn { border-radius: 999px; }
+.fa-page-btn[data-variant="primary"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.fa-page-btn[data-variant="primary"]:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: #fff; }
+.fa-settings-card { border-color: transparent; box-shadow: var(--hu-shadow-xs); border-radius: 16px; }
+.fa-settings-card:hover:not(:disabled) { border-color: transparent; box-shadow: var(--hu-shadow-md); background: var(--surface); }
+.fa-cmdk { border-radius: 24px; border-color: transparent; }
+
+/* Landing greeting: AirAxis-size title */
+.fa-greeting h1 { font-size: 34px; letter-spacing: -0.025em; }
+
+/* ────────────────────────────────────────────────────────────────
+   Onboarding gate (zo-) — sign-in card + React Bits stepper,
+   same skin as the /lp demo.
+   ──────────────────────────────────────────────────────────────── */
+.zo-demobar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 400;
+  height: 40px; display: flex; align-items: center; gap: 16px; padding: 0 18px;
+  background: #141416; color: #C7C7CC; font-size: 12.5px;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+.zo-demobar .brand { font-weight: 600; color: #fff; letter-spacing: 0.02em; }
+.zo-demobar .steps { display: flex; align-items: center; gap: 6px; flex: 1; justify-content: center; }
+.zo-demobar .step { display: flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; color: #8A8A92; white-space: nowrap; cursor: pointer; background: none; border: none; font: inherit; }
+.zo-demobar .step.active { background: rgba(255,255,255,0.16); color: #fff; font-weight: 600; }
+.zo-demobar .step.done { color: #B7B7BE; }
+.zo-demobar .sep { color: #53535B; }
+.zo-demobar .restart { padding: 5px 14px; border-radius: 999px; background: rgba(255,255,255,0.14); color: #fff; border: none; font: inherit; font-weight: 500; cursor: pointer; }
+.zo-demobar .restart:hover { background: rgba(255,255,255,0.22); }
+
+.zo-stage-root {
+  position: fixed; inset: 0; top: 40px; overflow-y: auto;
+  background: linear-gradient(180deg, #F0F0F3 0%, #E6E7EB 60%, #E3E4E9 100%);
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #141416;
+  font-size: 14px;
+}
+.zo-center { display: flex; justify-content: center; align-items: flex-start; padding: 52px 24px; min-height: 100%; }
+.zo-caption { text-align: center; color: #74747D; font-size: 13px; margin-bottom: 20px; }
+.zo-caption b { color: #2E2E33; }
+
+.zo-auth-card {
+  background: #fff; border-radius: 24px; box-shadow: 0 2px 6px rgba(20,20,25,0.05), 0 14px 36px rgba(20,20,25,0.08);
+  padding: 40px 40px 32px;
+}
+.zo-auth-title { font-size: 21px; font-weight: 650; letter-spacing: -0.015em; margin-bottom: 4px; }
+.zo-auth-sub { color: #74747D; font-size: 13.5px; margin-bottom: 24px; }
+.zo-auth-foot { margin-top: 22px; text-align: center; color: #74747D; font-size: 12px; }
+.zo-or { display: flex; align-items: center; gap: 12px; color: #94949D; font-size: 11.5px; margin: 18px 0; }
+.zo-or::before, .zo-or::after { content: ""; flex: 1; border-top: 1px solid #E6E6EB; }
+.zo-code-row { display: flex; gap: 8px; justify-content: center; margin: 8px 0 18px; }
+.zo-code-cell {
+  width: 48px; height: 56px; border: 1px solid #E6E6EB; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 22px; font-weight: 600; background: #F4F4F6;
+}
+.zo-note { margin-top: 16px; padding: 11px 14px; border-radius: 12px; background: #F4F4F6; color: #2E2E33; font-size: 12.5px; display: flex; gap: 8px; align-items: flex-start; }
+
+.zo-field { margin-bottom: 14px; }
+.zo-field label { display: block; font-size: 12.5px; font-weight: 600; color: #2E2E33; margin-bottom: 6px; }
+.zo-field input {
+  width: 100%; box-sizing: border-box; padding: 11px 15px; border: 1px solid #E6E6EB;
+  border-radius: 12px; background: #fff; font-size: 14px; outline: none; font-family: inherit; color: inherit;
+}
+.zo-field input[readonly] { background: #F4F4F6; }
+
+.zo-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 10px 18px; border-radius: 999px; font-weight: 600; font-size: 13.5px;
+  border: none; cursor: pointer; font-family: inherit; white-space: nowrap;
+  transition: background 0.12s, box-shadow 0.12s;
+}
+.zo-btn-primary { background: #141416; color: #fff; }
+.zo-btn-primary:hover { background: #2A2A2E; }
+.zo-btn-secondary { background: #fff; color: #141416; box-shadow: 0 1px 2px rgba(20,20,25,0.04), 0 4px 14px rgba(20,20,25,0.05); }
+.zo-btn-ghost { background: transparent; color: #2E2E33; }
+.zo-btn-ghost:hover { background: #ECECF0; }
+.zo-btn-block { width: 100%; }
+.zo-btn-lg { padding: 13px 26px; font-size: 14.5px; }
+
+.zo-stepper-card {
+  margin: 0 auto; width: 100%; background: #fff; border-radius: 24px;
+  box-shadow: 0 2px 6px rgba(20,20,25,0.05), 0 14px 36px rgba(20,20,25,0.08); overflow: hidden;
+}
+.zo-step-indicator-row { display: flex; width: 100%; align-items: center; padding: 28px 40px 6px; }
+.zo-step-indicator { position: relative; cursor: pointer; outline: none; }
+.zo-step-indicator-inner { display: flex; height: 34px; width: 34px; align-items: center; justify-content: center; border-radius: 50%; font-weight: 600; }
+.zo-active-dot { height: 11px; width: 11px; border-radius: 50%; background: #fff; }
+.zo-step-number { font-size: 13px; }
+.zo-step-connector { position: relative; margin: 0 10px; height: 2px; flex: 1; overflow: hidden; border-radius: 999px; background: #ECECF0; }
+.zo-step-connector-inner { position: absolute; left: 0; top: 0; height: 100%; }
+.zo-check-icon { height: 15px; width: 15px; color: #fff; }
+.zo-step-content { position: relative; overflow: hidden; }
+.zo-step-default { padding: 26px 40px 10px; }
+.zo-footer { padding: 0 40px 30px; }
+.zo-footer-nav { margin-top: 26px; display: flex; align-items: center; }
+.zo-footer-nav.spread { justify-content: space-between; }
+.zo-footer-nav.end { justify-content: flex-end; }
+.zo-back { padding: 8px 14px; border-radius: 999px; color: #74747D; font-weight: 500; background: none; border: none; font: inherit; cursor: pointer; }
+.zo-back:hover { color: #141416; background: #F4F4F6; }
+
+.zo-kicker { font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #74747D; margin-bottom: 8px; }
+.zo-title { font-size: 22px; font-weight: 650; letter-spacing: -0.015em; margin-bottom: 6px; }
+.zo-sub { color: #74747D; font-size: 14px; margin-bottom: 26px; max-width: 560px; }
+.zo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+.zo-points { display: flex; flex-direction: column; gap: 14px; margin-top: 6px; }
+.zo-point { display: flex; gap: 15px; padding: 17px 18px; border-radius: 18px; background: #F4F4F6; }
+.zo-point .ic {
+  width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0; background: #fff; color: #141416;
+  box-shadow: 0 1px 2px rgba(20,20,25,0.04), 0 4px 14px rgba(20,20,25,0.05);
+  display: flex; align-items: center; justify-content: center;
+}
+.zo-point .t { font-weight: 600; font-size: 14px; }
+.zo-point .d { color: #74747D; font-size: 12.5px; }
+.zo-acks { display: flex; flex-direction: column; gap: 10px; }
+.zo-ack { display: flex; align-items: center; gap: 14px; padding: 15px 18px; border-radius: 18px; background: #F4F4F6; border: none; cursor: pointer; text-align: left; font: inherit; color: inherit; width: 100%; }
+.zo-ack .grow { flex: 1; min-width: 0; }
+.zo-ack .t { font-weight: 600; font-size: 13.5px; }
+.zo-ack .d { color: #74747D; font-size: 12px; }
+.zo-checkbox {
+  width: 19px; height: 19px; border-radius: 6px; border: 1.5px solid #D8D8DF;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: #fff; color: transparent; transition: all 0.1s;
+}
+.zo-checkbox.on { background: #141416; border-color: #141416; color: #fff; }
+.zo-toggles { }
+.zo-toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 2px; border-bottom: 1px solid #E6E6EB; gap: 16px; }
+.zo-toggle-row:last-child { border-bottom: none; }
+.zo-toggle-row .t { font-weight: 600; font-size: 13.5px; }
+.zo-toggle-row .d { color: #74747D; font-size: 12px; }
+.zo-switch { width: 38px; height: 22px; border-radius: 999px; background: #D8D8DF; position: relative; transition: background 0.15s; flex-shrink: 0; border: none; cursor: pointer; }
+.zo-switch.on { background: #141416; }
+.zo-switch .knob { position: absolute; top: 2.5px; left: 2.5px; width: 17px; height: 17px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(20,20,25,0.2); transition: left 0.15s; }
+.zo-switch.on .knob { left: 18.5px; }
+.zo-done-icon {
+  width: 64px; height: 64px; border-radius: 50%; background: #E8F6EC; color: #16A34A;
+  display: flex; align-items: center; justify-content: center; margin: 30px auto 22px;
+}

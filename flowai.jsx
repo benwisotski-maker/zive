@@ -1398,6 +1398,326 @@
     home: "dashboard",
   };
 
+  // ──────────────────────────────────────────────────────────────
+  // 14b. Onboarding gate — sign-in + React Bits stepper (AirAxis skin)
+  //      framer-motion 6 UMD exposes window.Motion.
+  // ──────────────────────────────────────────────────────────────
+  const { motion, AnimatePresence } = window.Motion || {};
+
+  const ZO_USER = {
+    name: "Morgan Chen",
+    first: "Morgan",
+    org: "Chen Family Office",
+    email: "morgan@chenfamilyoffice.com",
+    initials: "MC",
+  };
+
+  const ZO_PATHS = {
+    check: "M5 13l4 4L19 7",
+    chevR: "M9 6l6 6-6 6",
+    spark: "M12 3l1.9 5.6L20 10l-5.4 2.3L12 18l-2.6-5.7L4 10l6.1-1.4z",
+    page: "M7 3h7l5 5v13H7zM14 3v5h5",
+    grid: "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z",
+    bell: "M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6m4 9a2 2 0 0 0 4 0",
+    shield: "M12 22s8-3 8-10V5l-8-3-8 3v7c0 7 8 10 8 10z",
+  };
+  function ZoIc({ d, size = 16, sw = 1.7 }) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d={ZO_PATHS[d] || ZO_PATHS.page} />
+      </svg>
+    );
+  }
+  function ZoWordmark({ color = "var(--fg)" }) {
+    return (
+      <svg height={26} viewBox="0 0 92 32" fill="none" aria-label="zive">
+        <text x="0" y="25" fontFamily="Inter, sans-serif" fontSize="27" fontWeight="700" letterSpacing="-0.5" fill={color}>zive</text>
+      </svg>
+    );
+  }
+
+  const ZO_STEP_COLORS = {
+    inactive: { backgroundColor: "#ECECF0", color: "#74747D" },
+    active: { backgroundColor: "#141416", color: "#FFFFFF" },
+    complete: { backgroundColor: "#141416", color: "#FFFFFF" },
+  };
+  const zoStepVariants = {
+    enter: dir => ({ x: dir >= 0 ? "-100%" : "100%", opacity: 0 }),
+    center: { x: "0%", opacity: 1 },
+    exit: dir => ({ x: dir >= 0 ? "50%" : "-50%", opacity: 0 }),
+  };
+
+  function ZoCheckIcon(props) {
+    return (
+      <svg {...props} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <motion.path initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
+          transition={{ delay: 0.1, type: "tween", ease: "easeOut", duration: 0.3 }}
+          strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+      </svg>
+    );
+  }
+  function ZoStepIndicator({ step, currentStep, onClickStep }) {
+    const status = currentStep === step ? "active" : currentStep < step ? "inactive" : "complete";
+    return (
+      <motion.div onClick={() => { if (step !== currentStep) onClickStep(step); }} className="zo-step-indicator" animate={status} initial={false}>
+        <motion.div variants={ZO_STEP_COLORS} transition={{ duration: 0.3 }} className="zo-step-indicator-inner">
+          {status === "complete" ? <ZoCheckIcon className="zo-check-icon" /> : status === "active" ? <div className="zo-active-dot" /> : <span className="zo-step-number">{step}</span>}
+        </motion.div>
+      </motion.div>
+    );
+  }
+  function ZoStepConnector({ isComplete }) {
+    return (
+      <div className="zo-step-connector">
+        <motion.div className="zo-step-connector-inner"
+          variants={{ incomplete: { width: 0, backgroundColor: "transparent" }, complete: { width: "100%", backgroundColor: "#141416" } }}
+          initial={false} animate={isComplete ? "complete" : "incomplete"} transition={{ duration: 0.4 }} />
+      </div>
+    );
+  }
+  function ZoSlideTransition({ children, direction, onHeightReady }) {
+    const containerRef = useRef(null);
+    useLayoutEffect(() => {
+      if (!containerRef.current) return;
+      const measure = () => containerRef.current && onHeightReady(containerRef.current.offsetHeight);
+      measure();
+      const ro = new ResizeObserver(measure);
+      ro.observe(containerRef.current);
+      return () => ro.disconnect();
+    }, [children, onHeightReady]);
+    return (
+      <motion.div ref={containerRef} custom={direction} variants={zoStepVariants}
+        initial="enter" animate="center" exit="exit" transition={{ duration: 0.4 }}
+        style={{ position: "absolute", left: 0, right: 0, top: 0 }}>
+        {children}
+      </motion.div>
+    );
+  }
+  function ZoStepContentWrapper({ isCompleted, currentStep, direction, children }) {
+    const [parentHeight, setParentHeight] = useState(0);
+    return (
+      <motion.div className="zo-step-content" style={{ position: "relative", overflow: "hidden" }}
+        animate={{ height: isCompleted ? 0 : parentHeight }} transition={{ type: "spring", duration: 0.4 }}>
+        <AnimatePresence initial={false} custom={direction}>
+          {!isCompleted && (
+            <ZoSlideTransition key={currentStep} direction={direction} onHeightReady={h => setParentHeight(h)}>
+              {children}
+            </ZoSlideTransition>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    );
+  }
+  function ZoStepper({ children, onFinalStepCompleted, onStepChange = () => {}, nextDisabled = false, onSkip, finalButtonText = "Finish setup" }) {
+    const [currentStep, setCurrentStep] = useState(1);
+    const [direction, setDirection] = useState(0);
+    const stepsArray = React.Children.toArray(children);
+    const totalSteps = stepsArray.length;
+    const isCompleted = currentStep > totalSteps;
+    const isLastStep = currentStep === totalSteps;
+    const updateStep = newStep => {
+      setCurrentStep(newStep);
+      if (newStep > totalSteps) onFinalStepCompleted(); else onStepChange(newStep);
+    };
+    return (
+      <div className="zo-stepper-card">
+        <div className="zo-step-indicator-row">
+          {stepsArray.map((_, index) => (
+            <React.Fragment key={index + 1}>
+              <ZoStepIndicator step={index + 1} currentStep={currentStep}
+                onClickStep={clicked => { setDirection(clicked > currentStep ? 1 : -1); updateStep(clicked); }} />
+              {index < totalSteps - 1 && <ZoStepConnector isComplete={currentStep > index + 1} />}
+            </React.Fragment>
+          ))}
+        </div>
+        <ZoStepContentWrapper isCompleted={isCompleted} currentStep={currentStep} direction={direction}>
+          <div className="zo-step-default">{stepsArray[currentStep - 1]}</div>
+        </ZoStepContentWrapper>
+        {!isCompleted && (
+          <div className="zo-footer">
+            <div className={"zo-footer-nav" + (currentStep !== 1 ? " spread" : " end")}>
+              {currentStep !== 1 && (
+                <button className="zo-back" onClick={() => { setDirection(-1); updateStep(currentStep - 1); }}>Back</button>
+              )}
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                {onSkip && <button className="zo-btn zo-btn-ghost" onClick={onSkip}>Skip for now</button>}
+                <button className="zo-btn zo-btn-primary" disabled={nextDisabled} style={{ opacity: nextDisabled ? 0.5 : 1 }}
+                  onClick={() => { setDirection(1); updateStep(currentStep + 1); }}>
+                  {isLastStep ? finalButtonText : "Continue"} <ZoIc d="chevR" size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function ZoSignIn({ onDone }) {
+    const [step, setStep] = useState("creds");
+    return (
+      <div className="zo-center">
+        <div style={{ width: 410, maxWidth: "100%" }}>
+          <div className="zo-caption"><b>Step 1 — Secure sign-in.</b> Credentials are pre-filled for this demo — just click through.</div>
+          {step === "creds" ? (
+            <div className="zo-auth-card">
+              <div style={{ marginBottom: 22 }}><ZoWordmark /></div>
+              <div className="zo-auth-title">Sign in</div>
+              <div className="zo-auth-sub">Zive Flow · {ZO_USER.org}</div>
+              <div className="zo-field"><label>Email</label><input readOnly value={ZO_USER.email} /></div>
+              <div className="zo-field"><label>Password</label><input readOnly type="password" value="demo-password" /></div>
+              <button className="zo-btn zo-btn-primary zo-btn-block zo-btn-lg" onClick={() => setStep("code")}>Sign in</button>
+              <div className="zo-or">or</div>
+              <button className="zo-btn zo-btn-secondary zo-btn-block" onClick={() => setStep("code")}>Continue with SSO</button>
+              <div className="zo-auth-foot">Protected by two-factor authentication<br />SOC 2 Type II · 256-bit encryption</div>
+            </div>
+          ) : (
+            <div className="zo-auth-card">
+              <div style={{ marginBottom: 22 }}><ZoWordmark /></div>
+              <div className="zo-auth-title">Verify it's you</div>
+              <div className="zo-auth-sub">We sent a 6-digit code to {ZO_USER.email}</div>
+              <div className="zo-code-row">{["7", "3", "1", "0", "4", "2"].map((c, i) => <div key={i} className="zo-code-cell">{c}</div>)}</div>
+              <button className="zo-btn zo-btn-primary zo-btn-block zo-btn-lg" onClick={onDone}>Verify &amp; continue</button>
+              <div className="zo-note">Demo mode — the code is filled in for you. No password or device is required.</div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  function ZoOnboarding({ onDone }) {
+    const [stepNum, setStepNum] = useState(1);
+    const [spaces, setSpaces] = useState({ vcfo: true, lp: true, home: true });
+    const [prefs, setPrefs] = useState({ approvals: true, calls: true, docs: true, digest: true });
+    const [finished, setFinished] = useState(false);
+    const anySpace = Object.values(spaces).some(Boolean);
+
+    if (finished) {
+      return (
+        <div className="zo-center">
+          <div className="zo-stepper-card" style={{ width: 560, maxWidth: "100%", padding: "44px 48px", textAlign: "center" }}>
+            <div className="zo-done-icon"><ZoIc d="check" size={30} sw={2.4} /></div>
+            <div className="zo-title">You're all set, {ZO_USER.first}</div>
+            <div className="zo-sub" style={{ margin: "0 auto 28px" }}>
+              Zive Flow is ready across your workspaces. Ask anything — every answer is grounded in your funds' ledger and cited.
+            </div>
+            <button className="zo-btn zo-btn-primary zo-btn-lg" onClick={onDone}>Open Zive Flow <ZoIc d="chevR" size={15} /></button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="zo-center">
+        <div style={{ width: 780, maxWidth: "100%" }}>
+          <div className="zo-caption"><b>Step 2 — First-time onboarding.</b> Four short steps, all pre-filled with dummy data.</div>
+          <ZoStepper onStepChange={setStepNum} onFinalStepCompleted={() => setFinished(true)}
+            nextDisabled={stepNum === 3 && !anySpace} onSkip={onDone} finalButtonText="Finish setup">
+            <div>
+              <div className="zo-kicker">Welcome to Zive Flow</div>
+              <div className="zo-title">{ZO_USER.name}</div>
+              <div className="zo-sub">Your AI-native workspace for <b>{ZO_USER.org}</b>. Here's how it works:</div>
+              <div className="zo-points">
+                <div className="zo-point">
+                  <div className="ic"><ZoIc d="spark" size={18} /></div>
+                  <div><div className="t">Ask anything</div>
+                  <div className="d">A conversation over your funds — NAV, capital calls, LP letters. Every answer cites its sources.</div></div>
+                </div>
+                <div className="zo-point">
+                  <div className="ic"><ZoIc d="page" size={18} /></div>
+                  <div><div className="t">Live pages</div>
+                  <div className="d">Answers open the real screens — dashboards, accounting, documents — right next to the thread.</div></div>
+                </div>
+                <div className="zo-point">
+                  <div className="ic"><ZoIc d="grid" size={18} /></div>
+                  <div><div className="t">Three workspaces</div>
+                  <div className="d">Switch between fund operations (VCFO), your LP view, and Home with ⌘1–3 or the pills up top.</div></div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div className="zo-kicker">Your details</div>
+              <div className="zo-title">Confirm your profile</div>
+              <div className="zo-sub">Pre-filled from your invitation. You can change it any time in Settings.</div>
+              <div className="zo-grid">
+                <div className="zo-field"><label>Name</label><input readOnly value={ZO_USER.name} /></div>
+                <div className="zo-field"><label>Organization</label><input readOnly value={ZO_USER.org} /></div>
+                <div className="zo-field"><label>Email</label><input readOnly value={ZO_USER.email} /></div>
+                <div className="zo-field"><label>Role</label><input readOnly value="Administrator" /></div>
+              </div>
+              <div className="zo-note" style={{ marginTop: 4 }}><ZoIc d="shield" size={14} /> Your data stays inside your tenant. AI answers are generated against your ledger, never shared.</div>
+            </div>
+            <div>
+              <div className="zo-kicker">Workspaces</div>
+              <div className="zo-title">Choose your workspaces</div>
+              <div className="zo-sub">These determine what Zive Flow can see and answer about. You need at least one.</div>
+              <div className="zo-acks">
+                {[
+                  { k: "vcfo", t: "Admin VCFO", d: "Fund operations — NAV, capital calls, accounting, reporting" },
+                  { k: "lp", t: "Admin V LP", d: "Your Limited Partner view — balances, distributions, tax docs" },
+                  { k: "home", t: "Home", d: "Personal cockpit — approvals, calendar, cross-workspace digest" },
+                ].map(it => (
+                  <button key={it.k} className="zo-ack" onClick={() => setSpaces(s => ({ ...s, [it.k]: !s[it.k] }))}>
+                    <div className={"zo-checkbox" + (spaces[it.k] ? " on" : "")}><ZoIc d="check" size={12} sw={3} /></div>
+                    <div className="grow"><div className="t">{it.t}</div><div className="d">{it.d}</div></div>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="zo-kicker">Notifications</div>
+              <div className="zo-title">Stay in the loop</div>
+              <div className="zo-sub">Delivered to {ZO_USER.email}. Change any time in Settings.</div>
+              <div className="zo-toggles">
+                {[
+                  { k: "approvals", t: "Approvals", d: "Wires, capital calls and documents waiting on you" },
+                  { k: "calls", t: "Capital calls", d: "Issued notices, due dates, payment confirmations" },
+                  { k: "docs", t: "Documents", d: "K-1s, statements and reports the moment they post" },
+                  { k: "digest", t: "AI weekly digest", d: "What changed across your funds, summarized every Monday" },
+                ].map(it => (
+                  <div key={it.k} className="zo-toggle-row">
+                    <div><div className="t">{it.t}</div><div className="d">{it.d}</div></div>
+                    <button className={"zo-switch" + (prefs[it.k] ? " on" : "")} onClick={() => setPrefs(p => ({ ...p, [it.k]: !p[it.k] }))} aria-label={it.t}>
+                      <span className="knob" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </ZoStepper>
+          <div className="zo-caption" style={{ marginTop: 18, marginBottom: 0 }}>Questions? support@zive.ai · Your progress is saved automatically.</div>
+        </div>
+      </div>
+    );
+  }
+
+  const ZO_STAGES = [
+    { id: "signin", label: "1 · Sign in" },
+    { id: "onboarding", label: "2 · Onboarding" },
+    { id: "app", label: "3 · Zive Flow" },
+  ];
+  function ZoDemoBar({ stage, setStage }) {
+    const idx = ZO_STAGES.findIndex(s => s.id === stage);
+    return (
+      <div className="zo-demobar">
+        <span className="brand">zive flow · demo</span>
+        <div className="steps">
+          {ZO_STAGES.map((s, i) => (
+            <React.Fragment key={s.id}>
+              {i > 0 && <span className="sep">›</span>}
+              <button className={"step" + (i === idx ? " active" : "") + (i < idx ? " done" : "")} onClick={() => setStage(s.id)}>
+                {i < idx && <span style={{ fontSize: 10 }}>✓</span>}{s.label}
+              </button>
+            </React.Fragment>
+          ))}
+        </div>
+        <button className="restart" onClick={() => setStage("signin")}>↺ Restart</button>
+      </div>
+    );
+  }
+
   function App() {
     const [entity, setEntity] = useState("vcfo");
     const [turns, setTurns] = useState([]);             // [{id, prompt, answer, tools, cards, followups, sources, kind}]
@@ -1411,6 +1731,13 @@
       catch (e) { return "dark"; }
     });
     const threadEndRef = useRef(null);
+    // Demo stage gate: sign-in → onboarding → app. ?stage=app skips ahead.
+    const [zoStage, setZoStage] = useState(() => {
+      try {
+        const s = new URLSearchParams(window.location.search).get("stage");
+        return ZO_STAGES.some(x => x.id === s) ? s : "signin";
+      } catch (e) { return "signin"; }
+    });
 
     // Keep refs to current state for the keyboard handler (so we don't rebind on every change)
     const entityRef = useRef(entity);
@@ -1658,6 +1985,19 @@
             value={value}
             setValue={setValue}
           />
+        </>
+      );
+    }
+
+    if (zoStage !== "app") {
+      return (
+        <>
+          <ZoDemoBar stage={zoStage} setStage={setZoStage} />
+          <div className="zo-stage-root">
+            {zoStage === "signin"
+              ? <ZoSignIn onDone={() => setZoStage("onboarding")} />
+              : <ZoOnboarding onDone={() => setZoStage("app")} />}
+          </div>
         </>
       );
     }
