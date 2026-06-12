@@ -211,7 +211,7 @@ function Ic({ d, size = 16, sw = 1.7 }) {
   );
 }
 
-function Wordmark({ h = 26, color = "#1F1F1D" }) {
+function Wordmark({ h = 26, color = "#141416" }) {
   return (
     <svg height={h} viewBox="0 0 92 32" fill="none" aria-label="zive">
       <text x="0" y="25" fontFamily="Inter, sans-serif" fontSize="27" fontWeight="700" letterSpacing="-0.5" fill={color}>zive</text>
@@ -223,10 +223,8 @@ function Chip({ tone = "mut", children }) {
   return <span className={`chip chip-${tone}`}>{children}</span>;
 }
 function StatusChip({ status }) {
-  if (status === "Paid") return <Chip tone="pos"><Ic d="check" size={11} sw={2.4} /> Paid</Chip>;
-  if (status === "Pending") return <Chip tone="warn">Pending</Chip>;
-  if (status === "Overdue") return <Chip tone="neg">Overdue</Chip>;
-  return <Chip>{status}</Chip>;
+  const tone = status === "Paid" ? "pos" : status === "Pending" ? "warn" : status === "Overdue" ? "neg" : "mut";
+  return <span className={`status status-${tone}`}><span className="sdot" />{status}</span>;
 }
 
 function Empty({ icon = "dist", title, desc }) {
@@ -271,38 +269,121 @@ function roundedTopRect(x, y, w, h, r) {
 }
 
 function GrowthChart() {
-  const W = 680, H = 252, padL = 48, padB = 28, padT = 12;
+  const W = 720, H = 256, padL = 48, padR = 12, padB = 28, padT = 18;
   const max = 500000;
   const plotH = H - padB - padT;
-  const plotW = W - padL - 8;
+  const plotW = W - padL - padR;
   const groupW = plotW / NAV_HISTORY.length;
-  const bw = 22, gap = 8;
   const y = v => padT + plotH * (1 - v / max);
   const h = v => plotH * (v / max);
   const ticks = [0, 100000, 200000, 300000, 400000, 500000];
+
+  /* dense thin bars: 3 per quarter (monthly paid-in, a step series) */
+  const bars = NAV_HISTORY.flatMap((d, i) =>
+    [0, 1, 2].map(m => ({ x: padL + groupW * i + groupW * (m + 0.5) / 3, v: d.paid }))
+  );
+  /* smooth account-value line */
+  const pts = NAV_HISTORY.map((d, i) => [padL + groupW * i + groupW / 2, y(d.value)]);
+  const line = pts.reduce((acc, p, i, a) => {
+    if (i === 0) return `M${p[0]},${p[1]}`;
+    const mx = (a[i - 1][0] + p[0]) / 2;
+    return acc + ` C${mx},${a[i - 1][1]} ${mx},${p[1]} ${p[0]},${p[1]}`;
+  }, "");
+  const area = `${line} L${pts[pts.length - 1][0]},${y(0)} L${pts[0][0]},${y(0)} Z`;
+  const last = pts[pts.length - 1];
+
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }} role="img" aria-label="Capital account growth by quarter">
+      <defs>
+        <linearGradient id="gc-stroke" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#FBBF24" /><stop offset="100%" stopColor="#F97316" />
+        </linearGradient>
+        <linearGradient id="gc-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgba(249,115,22,0.20)" /><stop offset="100%" stopColor="rgba(249,115,22,0)" />
+        </linearGradient>
+      </defs>
       {ticks.map(t => (
         <g key={t}>
-          <line x1={padL} x2={W - 4} y1={y(t)} y2={y(t)} stroke="var(--border)" strokeDasharray={t === 0 ? undefined : "2 5"} />
+          <line x1={padL} x2={W - padR} y1={y(t)} y2={y(t)} stroke="var(--border)" strokeDasharray={t === 0 ? undefined : "2 5"} />
           <text x={padL - 9} y={y(t) + 3.5} textAnchor="end" className="chart-axis">{t === 0 ? "0" : `$${t / 1000}k`}</text>
         </g>
       ))}
-      {NAV_HISTORY.map((d, i) => {
-        const cx = padL + groupW * i + groupW / 2;
-        return (
-          <g key={d.q}>
-            <path d={roundedTopRect(cx - bw - gap / 2, y(d.value), bw, h(d.value), 7)} fill="var(--teal-bar)" />
-            <path d={roundedTopRect(cx + gap / 2, y(d.paid), bw, h(d.paid), 7)} fill="var(--teal-bar-light)" />
-            <text x={cx} y={H - 9} textAnchor="middle" className="chart-axis">{d.q}</text>
-          </g>
-        );
-      })}
+      {bars.map((b, i) => (
+        <path key={i} d={roundedTopRect(b.x - 3, y(b.v), 6, h(b.v), 3)} fill="var(--chart-bar)" />
+      ))}
+      <path d={area} fill="url(#gc-fill)" />
+      <path d={line} fill="none" stroke="url(#gc-stroke)" strokeWidth="2.5" strokeLinecap="round" />
+      <circle cx={last[0]} cy={last[1]} r="5" fill="#F97316" stroke="#fff" strokeWidth="2.5" />
+      {NAV_HISTORY.map((d, i) => (
+        <text key={d.q} x={padL + groupW * i + groupW / 2} y={H - 9} textAnchor="middle" className="chart-axis">{d.q}</text>
+      ))}
     </svg>
   );
 }
 
-const DONUT_COLORS = ["#6E4A3E", "#8C5A4F", "#A96F5F", "#C28572", "#D69E88", "#E5B7A1", "#EFCDBA", "#F7E2D4"];
+/* Semicircle gauge (maintenance-card style) */
+function Gauge({ pct, value, label, size = 200, thickness = 16 }) {
+  const r = (size - thickness) / 2;
+  const cx = size / 2, cy = size / 2;
+  const arc = `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`;
+  const half = Math.PI * r;
+  return (
+    <div className="gauge-figure" style={{ width: size }}>
+      <svg width={size} height={size / 2 + thickness / 2} viewBox={`0 0 ${size} ${size / 2 + thickness / 2}`}>
+        <defs>
+          <linearGradient id="gauge-grad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#86EFAC" /><stop offset="100%" stopColor="#16A34A" />
+          </linearGradient>
+        </defs>
+        <path d={arc} fill="none" stroke="var(--surface-3)" strokeWidth={thickness} strokeLinecap="round" />
+        <path d={arc} fill="none" stroke="url(#gauge-grad)" strokeWidth={thickness} strokeLinecap="round"
+          strokeDasharray={`${half * pct} ${half}`} />
+      </svg>
+      <div className="gauge-center">
+        <div className="v num">{value}</div>
+        <div className="l">{label}</div>
+      </div>
+    </div>
+  );
+}
+
+/* Thin meter line with marker dot (alerts-row style) */
+function Meter({ label, value, pct, color }) {
+  return (
+    <div className="meter">
+      <div className="top">
+        <span className="lab"><span className="sdot" style={{ width: 7, height: 7, borderRadius: "50%", background: color, display: "inline-block" }} />{label}</span>
+        <span className="val num">{value}</span>
+      </div>
+      <div className="track">
+        <div className="fill2" style={{ width: `${pct * 100}%`, background: color, opacity: 0.45 }} />
+        <div className="mark" style={{ left: `${pct * 100}%`, background: color }} />
+      </div>
+    </div>
+  );
+}
+
+/* Lifecycle timeline (flight-timeline style) */
+function CallTimeline({ steps }) {
+  return (
+    <div className="timeline">
+      {steps.map((s, i) => (
+        <React.Fragment key={s.label}>
+          {i > 0 && <div className={"tconn" + (steps[i - 1].state === "done" ? " done" : "")} />}
+          <div className={"tstep " + s.state}>
+            <div className="tdot"><div className="inner" /></div>
+            <div>
+              <div className="tlabel">{s.label}</div>
+              {s.date && <div className="tdate">{s.date}</div>}
+            </div>
+          </div>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+const DONUT_COLORS = ["#141416", "#3A3A41", "#5A5A64", "#7B7B86", "#9B9BA5", "#BABAC2", "#D6D6DC", "#EAEAEE"];
 
 function arcPath(cx, cy, r, a0, a1) {
   const pt = a => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
@@ -544,9 +625,9 @@ function Step({ children }) {
 
 /* Design-system colors for the animated indicators */
 const STEP_COLORS = {
-  inactive: { backgroundColor: "#EFEFEA", color: "#75756D" },
-  active: { backgroundColor: "#2D6A72", color: "#FFFFFF" },
-  complete: { backgroundColor: "#2D6A72", color: "#FFFFFF" },
+  inactive: { backgroundColor: "#ECECF0", color: "#74747D" },
+  active: { backgroundColor: "#141416", color: "#FFFFFF" },
+  complete: { backgroundColor: "#141416", color: "#FFFFFF" },
 };
 
 function StepIndicator({ step, currentStep, onClickStep }) {
@@ -565,7 +646,7 @@ function StepConnector({ isComplete }) {
     <div className="step-connector">
       <motion.div
         className="step-connector-inner"
-        variants={{ incomplete: { width: 0, backgroundColor: "transparent" }, complete: { width: "100%", backgroundColor: "#2D6A72" } }}
+        variants={{ incomplete: { width: 0, backgroundColor: "transparent" }, complete: { width: "100%", backgroundColor: "#141416" } }}
         initial={false}
         animate={isComplete ? "complete" : "incomplete"}
         transition={{ duration: 0.4 }}
@@ -745,21 +826,15 @@ function OnboardingStage({ onDone }) {
    ============================================================ */
 
 const NAV = [
-  { label: "Fund", items: [
-    { id: "overview", label: "Overview", icon: "home" },
-    { id: "commitments", label: "Commitments", icon: "pie" },
-    { id: "investments", label: "Investments", icon: "trend" },
-  ]},
-  { label: "Accounting", items: [
-    { id: "financials", label: "Financial Statements", icon: "doc" },
-    { id: "calls", label: "Capital Calls", icon: "call", count: 1 },
-    { id: "distributions", label: "Distributions", icon: "dist" },
-    { id: "personal", label: "Personal Statement", icon: "user" },
-    { id: "wire", label: "Wire Instructions", icon: "bank" },
-  ]},
-  { label: "Files", items: [
-    { id: "documents", label: "Documents", icon: "folder" },
-  ]},
+  { id: "overview", label: "Overview", icon: "home" },
+  { id: "commitments", label: "Commitments", icon: "pie" },
+  { id: "investments", label: "Investments", icon: "trend" },
+  { id: "financials", label: "Financials", icon: "doc" },
+  { id: "calls", label: "Capital Calls", icon: "call", dot: true },
+  { id: "distributions", label: "Distributions", icon: "dist" },
+  { id: "personal", label: "Statement", icon: "user" },
+  { id: "wire", label: "Wire", icon: "bank" },
+  { id: "documents", label: "Documents", icon: "folder" },
 ];
 
 function PendingCallAlert({ go }) {
@@ -828,8 +903,8 @@ function OverviewPage({ go }) {
         <div className="card-head">
           <div className="card-title">Capital account growth</div>
           <div className="chart-legend">
-            <span className="li"><span className="swatch" style={{ background: "var(--teal-bar)" }} /> Account value</span>
-            <span className="li"><span className="swatch" style={{ background: "var(--teal-bar-light)" }} /> Paid-in capital</span>
+            <span className="li"><span className="swatch" style={{ background: "linear-gradient(90deg,#FBBF24,#F97316)" }} /> Account value</span>
+            <span className="li"><span className="swatch" style={{ background: "var(--chart-bar)" }} /> Paid-in capital</span>
           </div>
         </div>
         <div className="card-pad" style={{ paddingTop: 18 }}>
@@ -837,15 +912,20 @@ function OverviewPage({ go }) {
         </div>
       </div>
 
-      <div className="card section-gap card-pad">
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+      <div className="card section-gap">
+        <div className="card-head">
           <div className="card-title">Commitment progress</div>
           <div className="page-sub num" style={{ marginTop: 0 }}>{fmt(FUND.paidIn)} paid of {fmt(FUND.committed)} committed</div>
         </div>
-        <div className="progress"><div className="fill" style={{ width: "76.66%" }} /></div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 12, color: "var(--muted)" }}>
-          <span>Paid in {FUND.paidPct}</span>
-          <span>Called {FUND.calledPct} · Unfunded {fmt(FUND.unfunded)}</span>
+        <div className="card-pad">
+          <div className="gauge-wrap">
+            <Gauge pct={0.7666} value="76.66%" label="Paid in" />
+            <div className="meters">
+              <Meter label="Called to date" value={fmt(FUND.called)} pct={0.8849} color="#F59E0B" />
+              <Meter label="Due now — Capital Call #6" value={fmt(FUND.dueNow)} pct={FUND.dueNow / FUND.committed} color="#EF4444" />
+              <Meter label="Unfunded commitment" value={fmt(FUND.unfunded)} pct={FUND.unfunded / FUND.committed} color="#A4A4AD" />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1035,6 +1115,15 @@ function CapitalCallsPage({ go }) {
         <div className="card-head">
           <div className="card-title">Pending — Capital Call #{pending.num}</div>
           <StatusChip status="Pending" />
+        </div>
+        <div className="card-pad" style={{ paddingBottom: 4, borderBottom: "1px solid var(--border)" }}>
+          <CallTimeline steps={[
+            { label: "Issued", date: "Apr 2, 2026", state: "done" },
+            { label: "Notice delivered", date: "Apr 2, 2026", state: "done" },
+            { label: "Funds due", date: "Apr 16, 2026", state: "current" },
+            { label: "Payment received", date: "", state: "" },
+            { label: "Reconciled", date: "", state: "" },
+          ]} />
         </div>
         <div className="card-pad" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 28px" }}>
           <div>
@@ -1449,8 +1538,7 @@ function Portal({ onSignOut, initialRoute }) {
   const [route, setRoute] = useState(initialRoute || { page: "overview", ctx: null });
   const [notifOpen, setNotifOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const mainRef = useRef(null);
-  const go = (page, ctx = null) => { setRoute({ page, ctx }); setNotifOpen(false); setMenuOpen(false); if (mainRef.current) mainRef.current.scrollTop = 0; };
+  const go = (page, ctx = null) => { setRoute({ page, ctx }); setNotifOpen(false); setMenuOpen(false); window.scrollTo(0, 0); };
 
   const body = () => {
     switch (route.page) {
@@ -1469,80 +1557,61 @@ function Portal({ onSignOut, initialRoute }) {
   };
 
   return (
-    <div className="portal fade-in">
-      <aside className="sidebar">
-        <div className="sidebar-head"><Wordmark /></div>
-        <div className="entity-chip">
-          <div className="badge">GK</div>
-          <div className="name">THE GARGI M. KEELING<br />REVOCABLE TRUST</div>
-        </div>
-        {NAV.map(group => (
-          <div key={group.label} className="nav-group">
-            <div className="nav-label">{group.label}</div>
-            {group.items.map(it => (
-              <button key={it.id} className={"nav-item" + (route.page === it.id ? " active" : "")} onClick={() => go(it.id)}>
-                <span className="ico"><Ic d={it.icon} size={16} /></span>
-                {it.label}
-                {it.count ? <span className="count">{it.count}</span> : null}
+    <div className="portal2 fade-in">
+      <header className="topnav">
+        <div className="topnav-inner">
+          <div className="topnav-logo"><Wordmark h={28} /></div>
+          <nav className="navtiles">
+            <button className="navtile" title="Search" aria-label="Search"><Ic d="search" size={17} /></button>
+            {NAV.map(it => route.page === it.id ? (
+              <button key={it.id} className="navpill" onClick={() => go(it.id)}>
+                <Ic d={it.icon} size={16} /> {it.label}
+              </button>
+            ) : (
+              <button key={it.id} className="navtile" title={it.label} aria-label={it.label} onClick={() => go(it.id)}>
+                <Ic d={it.icon} size={17} />
+                {it.dot ? <span className="dot" /> : null}
               </button>
             ))}
-          </div>
-        ))}
-        <div className="sidebar-foot">
-          <button className={"nav-item" + (route.page === "settings" ? " active" : "")} onClick={() => go("settings")}>
-            <span className="ico"><Ic d="settings" size={16} /></span> Settings
-          </button>
-          <button className="nav-item" onClick={onSignOut}>
-            <span className="ico"><Ic d="logout" size={16} /></span> Sign out
-          </button>
-        </div>
-      </aside>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, position: "relative" }}>
-        <header className="topbar">
-          <div className="fund-switch">
-            <div className="logo">BV</div>
-            <div>
-              <div className="name">{FUND.name}</div>
-              <div className="role">LIMITED PARTNER · 1 FUND</div>
-            </div>
-          </div>
-          <div className="topbar-search"><Ic d="search" size={14} /> Search documents, calls, statements…</div>
-          <div className="topbar-right">
-            <button className="icon-btn" onClick={() => { setNotifOpen(o => !o); setMenuOpen(false); }} aria-label="Notifications">
+          </nav>
+          <div className="topnav-right">
+            <button className="navtile" title="Notifications" aria-label="Notifications" onClick={() => { setNotifOpen(o => !o); setMenuOpen(false); }}>
               <Ic d="bell" size={17} /><span className="dot" />
             </button>
-            <button className="topbar-user" onClick={() => { setMenuOpen(o => !o); setNotifOpen(false); }} aria-label="Account">
-              <span className="n">{LP.person}</span>
-              <Ic d="chevD" size={13} />
+            <button className={"navtile" + (route.page === "settings" ? " on" : "")} title="Settings" aria-label="Settings" onClick={() => go("settings")}>
+              <Ic d="settings" size={17} />
+            </button>
+            <button className="navtile user" aria-label="Account" onClick={() => { setMenuOpen(o => !o); setNotifOpen(false); }}>
               <span className="avatar">{LP.initials}</span>
+              <Ic d="chevD" size={13} />
             </button>
           </div>
-        </header>
-        {notifOpen && (
-          <div className="notif-panel">
-            <div className="card-head" style={{ padding: "12px 18px" }}>
-              <div className="card-title">Notifications</div><Chip tone="acc">{NOTIFICATIONS.length} new</Chip>
+          {notifOpen && (
+            <div className="notif-panel">
+              <div className="card-head" style={{ padding: "12px 20px" }}>
+                <div className="card-title" style={{ fontSize: 14 }}>Notifications</div><Chip tone="acc">{NOTIFICATIONS.length} new</Chip>
+              </div>
+              {NOTIFICATIONS.map((n, i) => (
+                <button key={i} className="notif-row" onClick={() => go(n.page, n.ctx || null)}>
+                  <div className="activity-ic" style={{ background: "var(--surface-3)", color: "var(--ink-2)" }}><Ic d="bell" size={14} /></div>
+                  <div className="grow"><div className="t">{n.t}</div><div className="d">{n.d}</div><div className="when">{n.when}</div></div>
+                </button>
+              ))}
             </div>
-            {NOTIFICATIONS.map((n, i) => (
-              <button key={i} className="notif-row" onClick={() => go(n.page, n.ctx || null)}>
-                <div className="activity-ic" style={{ background: "var(--accent-soft)", color: "var(--accent)" }}><Ic d="bell" size={14} /></div>
-                <div className="grow"><div className="t">{n.t}</div><div className="d">{n.d}</div><div className="when">{n.when}</div></div>
-              </button>
-            ))}
-          </div>
-        )}
-        {menuOpen && (
-          <div className="menu-panel">
-            <div className="menu-head"><div className="n">{LP.person}</div><div className="e">{LP.email}</div></div>
-            <button className="menu-item" onClick={() => go("settings")}><Ic d="settings" size={15} /> Settings</button>
-            <button className="menu-item" onClick={() => go("documents")}><Ic d="folder" size={15} /> Documents</button>
-            <button className="menu-item" onClick={onSignOut}><Ic d="logout" size={15} /> Sign out</button>
-          </div>
-        )}
-        <main className="main" ref={mainRef} onClick={() => { if (notifOpen) setNotifOpen(false); if (menuOpen) setMenuOpen(false); }}>
-          {body()}
-        </main>
-      </div>
+          )}
+          {menuOpen && (
+            <div className="menu-panel">
+              <div className="menu-head"><div className="n">{LP.person}</div><div className="e">{LP.entity}</div></div>
+              <button className="menu-item" onClick={() => go("settings")}><Ic d="settings" size={15} /> Settings</button>
+              <button className="menu-item" onClick={() => go("documents")}><Ic d="folder" size={15} /> Documents</button>
+              <button className="menu-item" onClick={onSignOut}><Ic d="logout" size={15} /> Sign out</button>
+            </div>
+          )}
+        </div>
+      </header>
+      <main className="main2" onClick={() => { if (notifOpen) setNotifOpen(false); if (menuOpen) setMenuOpen(false); }}>
+        {body()}
+      </main>
     </div>
   );
 }
