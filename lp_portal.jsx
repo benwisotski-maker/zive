@@ -9,7 +9,8 @@
    NAV 477,678.09 · ownership 3.46% · distributed 0.00
    ============================================================ */
 (() => {
-const { useState, useEffect, useRef } = React;
+const { useState, useEffect, useRef, useLayoutEffect } = React;
+const { motion, AnimatePresence } = window.Motion;
 
 /* ---------------- data ---------------- */
 
@@ -421,37 +422,196 @@ function LoginStage({ onDone }) {
    STAGE 3 — First-time onboarding wizard
    ============================================================ */
 
-const ONB_STEPS = [
-  { t: "Welcome", d: "What your portal covers" },
-  { t: "Investor profile", d: "Confirm your details" },
-  { t: "Fund documents", d: "Review & acknowledge" },
-  { t: "Banking", d: "Distribution account" },
-  { t: "Notifications", d: "Stay informed" },
-];
+/* ----- Stepper (ported from React Bits, restyled to the design system) ----- */
+
+function Stepper({
+  children,
+  initialStep = 1,
+  onStepChange = () => {},
+  onFinalStepCompleted = () => {},
+  backButtonText = "Back",
+  nextButtonText = "Continue",
+  finalButtonText = "Complete",
+  nextDisabled = false,
+  onSkip,
+}) {
+  const [currentStep, setCurrentStep] = useState(initialStep);
+  const [direction, setDirection] = useState(0);
+  const stepsArray = React.Children.toArray(children);
+  const totalSteps = stepsArray.length;
+  const isCompleted = currentStep > totalSteps;
+  const isLastStep = currentStep === totalSteps;
+
+  const updateStep = newStep => {
+    setCurrentStep(newStep);
+    if (newStep > totalSteps) onFinalStepCompleted();
+    else onStepChange(newStep);
+  };
+  const handleBack = () => { if (currentStep > 1) { setDirection(-1); updateStep(currentStep - 1); } };
+  const handleNext = () => { if (!isLastStep) { setDirection(1); updateStep(currentStep + 1); } };
+  const handleComplete = () => { setDirection(1); updateStep(totalSteps + 1); };
+
+  return (
+    <div className="stepper-card">
+      <div className="step-indicator-row">
+        {stepsArray.map((_, index) => {
+          const stepNumber = index + 1;
+          return (
+            <React.Fragment key={stepNumber}>
+              <StepIndicator step={stepNumber} currentStep={currentStep}
+                onClickStep={clicked => { setDirection(clicked > currentStep ? 1 : -1); updateStep(clicked); }} />
+              {index < totalSteps - 1 && <StepConnector isComplete={currentStep > stepNumber} />}
+            </React.Fragment>
+          );
+        })}
+      </div>
+      <StepContentWrapper isCompleted={isCompleted} currentStep={currentStep} direction={direction} className="step-content-default">
+        {stepsArray[currentStep - 1]}
+      </StepContentWrapper>
+      {!isCompleted && (
+        <div className="footer-container">
+          <div className={`footer-nav ${currentStep !== 1 ? "spread" : "end"}`}>
+            {currentStep !== 1 && <button onClick={handleBack} className="back-button">{backButtonText}</button>}
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              {onSkip && <button className="btn btn-ghost" onClick={onSkip}>Skip for now</button>}
+              <button onClick={isLastStep ? handleComplete : handleNext} className="btn btn-primary"
+                disabled={nextDisabled} style={{ opacity: nextDisabled ? 0.5 : 1 }}>
+                {isLastStep ? finalButtonText : nextButtonText} <Ic d="chevR" size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StepContentWrapper({ isCompleted, currentStep, direction, children, className }) {
+  const [parentHeight, setParentHeight] = useState(0);
+  return (
+    <motion.div
+      className={className}
+      style={{ position: "relative", overflow: "hidden" }}
+      animate={{ height: isCompleted ? 0 : parentHeight }}
+      transition={{ type: "spring", duration: 0.4 }}
+    >
+      <AnimatePresence initial={false} custom={direction}>
+        {!isCompleted && (
+          <SlideTransition key={currentStep} direction={direction} onHeightReady={h => setParentHeight(h)}>
+            {children}
+          </SlideTransition>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+function SlideTransition({ children, direction, onHeightReady }) {
+  const containerRef = useRef(null);
+  useLayoutEffect(() => {
+    if (!containerRef.current) return;
+    const measure = () => containerRef.current && onHeightReady(containerRef.current.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, [children, onHeightReady]);
+  return (
+    <motion.div
+      ref={containerRef}
+      custom={direction}
+      variants={stepVariants}
+      initial="enter"
+      animate="center"
+      exit="exit"
+      transition={{ duration: 0.4 }}
+      style={{ position: "absolute", left: 0, right: 0, top: 0 }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+const stepVariants = {
+  enter: dir => ({ x: dir >= 0 ? "-100%" : "100%", opacity: 0 }),
+  center: { x: "0%", opacity: 1 },
+  exit: dir => ({ x: dir >= 0 ? "50%" : "-50%", opacity: 0 }),
+};
+
+function Step({ children }) {
+  return <div className="step-default">{children}</div>;
+}
+
+/* Design-system colors for the animated indicators */
+const STEP_COLORS = {
+  inactive: { backgroundColor: "#EFEFEA", color: "#75756D" },
+  active: { backgroundColor: "#2D6A72", color: "#FFFFFF" },
+  complete: { backgroundColor: "#2D6A72", color: "#FFFFFF" },
+};
+
+function StepIndicator({ step, currentStep, onClickStep }) {
+  const status = currentStep === step ? "active" : currentStep < step ? "inactive" : "complete";
+  return (
+    <motion.div onClick={() => { if (step !== currentStep) onClickStep(step); }} className="step-indicator" animate={status} initial={false}>
+      <motion.div variants={STEP_COLORS} transition={{ duration: 0.3 }} className="step-indicator-inner">
+        {status === "complete" ? <CheckIcon className="check-icon" /> : status === "active" ? <div className="active-dot" /> : <span className="step-number">{step}</span>}
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function StepConnector({ isComplete }) {
+  return (
+    <div className="step-connector">
+      <motion.div
+        className="step-connector-inner"
+        variants={{ incomplete: { width: 0, backgroundColor: "transparent" }, complete: { width: "100%", backgroundColor: "#2D6A72" } }}
+        initial={false}
+        animate={isComplete ? "complete" : "incomplete"}
+        transition={{ duration: 0.4 }}
+      />
+    </div>
+  );
+}
+
+function CheckIcon(props) {
+  return (
+    <svg {...props} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <motion.path
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ delay: 0.1, type: "tween", ease: "easeOut", duration: 0.3 }}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M5 13l4 4L19 7"
+      />
+    </svg>
+  );
+}
 
 function OnboardingStage({ onDone }) {
-  const [step, setStep] = useState(0);
+  const [stepNum, setStepNum] = useState(1);
   const [acks, setAcks] = useState({ lpa: true, sub: true, side: true });
   const [prefs, setPrefs] = useState({ calls: true, dists: true, tax: true, stmts: true, news: false });
   const [finished, setFinished] = useState(false);
-  const last = ONB_STEPS.length - 1;
   const allAcked = Object.values(acks).every(Boolean);
 
-  const body = () => {
-    if (finished) {
-      return (
-        <div style={{ textAlign: "center", maxWidth: 440, margin: "0 auto" }}>
+  if (finished) {
+    return (
+      <div className="onb-stage fade-in">
+        <div className="stepper-card" style={{ width: 560, maxWidth: "100%", padding: "44px 48px", textAlign: "center" }}>
           <div className="onb-done-icon"><Ic d="check" size={30} sw={2.4} /></div>
           <div className="onb-title">You're all set, {LP.person.split(" ")[0]}</div>
-          <div className="onb-sub" style={{ margin: "0 auto 26px" }}>
+          <div className="onb-sub" style={{ margin: "0 auto 28px" }}>
             Your account for <b>{FUND.name}</b> is ready. One fund, one set of numbers — your dashboard, documents and tax forms all draw from the same ledger.
           </div>
           <button className="btn btn-primary btn-lg" onClick={onDone}>Go to your dashboard <Ic d="chevR" size={15} /></button>
         </div>
-      );
-    }
-    switch (step) {
-      case 0: return (
+      </div>
+    );
+  }
+
+  const stepWelcome = (
         <div>
           <div className="onb-kicker">Welcome to Zive</div>
           <div className="onb-title">{LP.entity}</div>
@@ -474,10 +634,11 @@ function OnboardingStage({ onDone }) {
             </div>
           </div>
         </div>
-      );
-      case 1: return (
+  );
+
+  const stepProfile = (
         <div>
-          <div className="onb-kicker">Step 2 of 5</div>
+          <div className="onb-kicker">Your details</div>
           <div className="onb-title">Confirm your investor profile</div>
           <div className="onb-sub">We pre-filled this from your subscription documents. You can change it any time in Settings.</div>
           <div className="onb-grid">
@@ -488,10 +649,11 @@ function OnboardingStage({ onDone }) {
           </div>
           <div className="field"><label>Mailing address</label><input readOnly value={LP.address} /></div>
         </div>
-      );
-      case 2: return (
+  );
+
+  const stepDocs = (
         <div>
-          <div className="onb-kicker">Step 3 of 5</div>
+          <div className="onb-kicker">Fund documents</div>
           <div className="onb-title">Review your fund documents</div>
           <div className="onb-sub">These executed agreements govern your investment. They'll always be available under Documents → Agreements.</div>
           <div className="ack-list">
@@ -509,10 +671,11 @@ function OnboardingStage({ onDone }) {
           </div>
           <div className="demo-note" style={{ marginTop: 18 }}>By continuing you acknowledge receipt of these documents. This does not re-execute or amend them.</div>
         </div>
-      );
-      case 3: return (
+  );
+
+  const stepBanking = (
         <div>
-          <div className="onb-kicker">Step 4 of 5</div>
+          <div className="onb-kicker">Banking</div>
           <div className="onb-title">Distribution account</div>
           <div className="onb-sub">Distributions will be wired to this account. Changes require verification by the fund administrator before taking effect.</div>
           <div className="onb-grid">
@@ -527,10 +690,11 @@ function OnboardingStage({ onDone }) {
             <div className="d">This account was verified during subscription. Any change triggers a callback verification — a core wire-fraud control.</div></div>
           </div>
         </div>
-      );
-      case 4: return (
+  );
+
+  const stepPrefs = (
         <div>
-          <div className="onb-kicker">Step 5 of 5</div>
+          <div className="onb-kicker">Notifications</div>
           <div className="onb-title">Notification preferences</div>
           <div className="onb-sub">Get an email the moment something is posted to your account. Delivered to {LP.email}.</div>
           <div className="card card-pad" style={{ paddingTop: 6, paddingBottom: 6 }}>
@@ -550,43 +714,27 @@ function OnboardingStage({ onDone }) {
             ))}
           </div>
         </div>
-      );
-    }
-  };
+  );
 
   return (
     <div className="onb-stage fade-in">
-      <div style={{ width: 980, maxWidth: "100%" }}>
+      <div style={{ width: 780, maxWidth: "100%" }}>
         <div className="stage-caption"><b>Step 3 — First-time onboarding.</b> Five short steps, all pre-filled with dummy data.</div>
-        <div className="onb-shell">
-          <div className="onb-rail">
-            <div className="wordmark"><Wordmark color="#fff" /></div>
-            <div className="onb-steps">
-              {ONB_STEPS.map((s, i) => (
-                <div key={i} className={"onb-step" + (i === step && !finished ? " active" : "") + (i < step || finished ? " done" : "")}>
-                  <div className="onb-dot">{i < step || finished ? <Ic d="check" size={11} sw={3} /> : i + 1}</div>
-                  <div><div className="t">{s.t}</div><div className="d">{s.d}</div></div>
-                </div>
-              ))}
-            </div>
-            <div className="foot">Questions? support@zive.ai<br />Your progress is saved automatically.</div>
-          </div>
-          <div className="onb-main">
-            <div className="onb-body fade-in" key={finished ? "done" : step}>{body()}</div>
-            {!finished && (
-              <div className="onb-actions">
-                <button className="btn btn-secondary" onClick={() => step === 0 ? null : setStep(step - 1)} style={{ visibility: step === 0 ? "hidden" : "visible" }}>Back</button>
-                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                  <button className="btn btn-ghost" onClick={onDone}>Skip for now</button>
-                  <button className="btn btn-primary" disabled={step === 2 && !allAcked} style={{ opacity: step === 2 && !allAcked ? 0.5 : 1 }}
-                    onClick={() => step === last ? setFinished(true) : setStep(step + 1)}>
-                    {step === last ? "Finish setup" : "Continue"} <Ic d="chevR" size={14} />
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <Stepper
+          initialStep={1}
+          onStepChange={setStepNum}
+          onFinalStepCompleted={() => setFinished(true)}
+          nextDisabled={stepNum === 3 && !allAcked}
+          onSkip={onDone}
+          finalButtonText="Finish setup"
+        >
+          <Step>{stepWelcome}</Step>
+          <Step>{stepProfile}</Step>
+          <Step>{stepDocs}</Step>
+          <Step>{stepBanking}</Step>
+          <Step>{stepPrefs}</Step>
+        </Stepper>
+        <div className="stage-caption" style={{ marginTop: 18, marginBottom: 0 }}>Questions? support@zive.ai · Your progress is saved automatically.</div>
       </div>
     </div>
   );

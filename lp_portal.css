@@ -183,35 +183,42 @@ a:hover { text-decoration: underline; }
 
 /* ---------- onboarding stage ---------- */
 .onb-stage { display: flex; justify-content: center; padding: 44px 24px; }
-.onb-shell {
-  width: 1000px; max-width: 100%; background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--r-xl); box-shadow: var(--shadow-md); display: flex; min-height: 620px; overflow: hidden;
-}
-.onb-rail {
-  width: 284px; flex-shrink: 0; background: var(--dark); color: #fff; padding: 34px 28px;
-  display: flex; flex-direction: column;
-}
-.onb-rail .wordmark { margin-bottom: 38px; }
-.onb-steps { display: flex; flex-direction: column; gap: 2px; flex: 1; }
-.onb-step { display: flex; gap: 12px; padding: 10px 12px; border-radius: var(--r-md); align-items: flex-start; }
-.onb-step.active { background: rgba(255,255,255,0.10); }
-.onb-dot {
-  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; margin-top: 1px;
-  border: 1.5px solid #5A5A53; display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 600; color: #8C8C84;
-}
-.onb-step.active .onb-dot { border-color: #fff; color: #fff; }
-.onb-step.done .onb-dot { background: #7FB6BD; border-color: #7FB6BD; color: var(--dark); }
-.onb-step .t { font-size: 13.5px; font-weight: 600; color: #C9C9C2; }
-.onb-step.active .t { color: #fff; }
-.onb-step .d { font-size: 11.5px; color: #8C8C84; margin-top: 1px; }
-.onb-rail .foot { font-size: 11.5px; color: #8C8C84; }
-.onb-main { flex: 1; padding: 42px 46px; display: flex; flex-direction: column; min-width: 0; }
 .onb-kicker { font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
 .onb-title { font-size: 22px; font-weight: 650; letter-spacing: -0.015em; margin-bottom: 6px; }
-.onb-sub { color: var(--muted); font-size: 14px; margin-bottom: 26px; max-width: 540px; }
-.onb-body { flex: 1; }
-.onb-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--border); }
+.onb-sub { color: var(--muted); font-size: 14px; margin-bottom: 26px; max-width: 560px; }
+
+/* Stepper (React Bits port, restyled) */
+.stepper-card {
+  margin: 0 auto; width: 100%;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-xl); box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+.step-indicator-row { display: flex; width: 100%; align-items: center; padding: 28px 40px 6px; }
+.step-indicator { position: relative; cursor: pointer; outline: none; }
+.step-indicator-inner {
+  display: flex; height: 34px; width: 34px; align-items: center; justify-content: center;
+  border-radius: 50%; font-weight: 600;
+}
+.active-dot { height: 11px; width: 11px; border-radius: 50%; background-color: #fff; }
+.step-number { font-size: 13px; }
+.step-connector {
+  position: relative; margin: 0 10px; height: 2px; flex: 1;
+  overflow: hidden; border-radius: var(--r-pill); background-color: var(--surface-3);
+}
+.step-connector-inner { position: absolute; left: 0; top: 0; height: 100%; }
+.check-icon { height: 15px; width: 15px; color: #fff; }
+.step-content-default { position: relative; overflow: hidden; }
+.step-default { padding: 26px 40px 10px; }
+.footer-container { padding: 0 40px 30px; }
+.footer-nav { margin-top: 26px; display: flex; align-items: center; }
+.footer-nav.spread { justify-content: space-between; }
+.footer-nav.end { justify-content: flex-end; }
+.back-button {
+  padding: 8px 14px; border-radius: var(--r-pill); color: var(--muted);
+  font-weight: 500; transition: color 0.2s, background 0.2s;
+}
+.back-button:hover { color: var(--ink); background: var(--surface-2); }
 .onb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
 .welcome-points { display: flex; flex-direction: column; gap: 14px; margin-top: 6px; }
 .welcome-point { display: flex; gap: 15px; padding: 17px 18px; border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface-2); }
